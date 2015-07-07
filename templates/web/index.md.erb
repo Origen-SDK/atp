@@ -1,0 +1,60 @@
+% render "layouts/basic.html" do
+
+%# HTML tags can be embedded in mark down files if you want to do specific custom
+%# formatting like this, but in most cases that is not required.
+<h1><%= Origen.app.namespace %> <span style="font-size: 14px">(<%= Origen.app.version %>)</span></h1>
+
+### Purpose
+
+This plugin provides...
+
+### How To Import
+
+##### To use in an application:
+
+Add the following to your application's <code>Gemfile</code>:
+
+~~~ruby
+gem '<%= Origen.app.name %>', '<%= Origen.app.version %>'
+~~~
+
+##### To use in a plugin:
+
+Add the following to your plugin's gemspec:
+
+~~~ruby
+spec.add_runtime_dependency '<%= Origen.app.name %>', '~> <%= Origen.app.version.major %>', '>= <%= Origen.app.version %>'
+~~~
+
+and require the gem in your code:
+
+~~~ruby
+require '<%= Origen.app.name %>'
+~~~
+
+
+### How To Use
+
+Give some quick start description here on how to use your plugin, providing
+links to the API documents where necessary for further details.
+
+Here is an example integration:
+
+~~~ruby
+# Include some code examples here
+~~~
+
+### How To Setup a Development Environment
+
+~~~text
+mkdir <%= Origen.app.name %>
+cd <%= Origen.app.name %>
+dssc setvault <%= Origen.app.config.vault %> .
+dssc pop -rec -get .
+~~~
+
+Follow the instructions here if you want to make a 3rd party app
+workspace use your development copy of the <%= Origen.app.name %> plugin:
+[Setting up a Plugin Development Environment](http://origen.freescale.net/origen/latest/guides/libraries/environment)
+
+% end
