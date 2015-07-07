@@ -10,7 +10,8 @@ class ATPApplication < Origen::Application
   self.namespace  = "ATP"
   config.name     = "atp"
   config.initials = "ATP"
-  config.rc_url    = "" 
+  config.rc_url    = "ssh://git@github.com:ginty/atp.git" 
+  config.release_externally = true
 
   # To enable deployment of your documentation to a web server (via the 'origen web'
   # command) fill in these attributes.
