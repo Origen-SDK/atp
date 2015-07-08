@@ -29,6 +29,7 @@ else
   require 'debugger'
 end
 require 'pry'
+require 'atp'
 
 def load_target(target="default")
   Origen.target.switch_to target

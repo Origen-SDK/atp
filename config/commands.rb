@@ -29,13 +29,13 @@ when "my_command"
   # control flowing back to Origen
   exit 0
 
-## Example of how to make a command to run unit tests, this simply invokes RSpec on
-## the spec directory
-#when "specs"
-#  ARGV.unshift "spec"
-#  require "rspec"
-#  require "rspec/autorun"
-#  exit 0 # This will never be hit on a fail, RSpec will automatically exit 1
+# Example of how to make a command to run unit tests, this simply invokes RSpec on
+# the spec directory
+when "specs"
+  ARGV.unshift "spec"
+  require "rspec"
+  require "rspec/autorun"
+  exit 0 # This will never be hit on a fail, RSpec will automatically exit 1
 
 ## Example of how to make a command to run diff-based tests
 #when "examples"  
@@ -68,9 +68,9 @@ else
   # You probably want to also add the your commands to the help shown via
   # origen -h, you can do this be assigning the required text to @application_commands
   # before handing control back to Origen. Un-comment the example below to get started.
-#  @application_commands = <<-EOT
-# specs        Run the specs (tests), -c will enable coverage
+  @application_commands = <<-EOT
+ specs        Run the specs (tests), -c will enable coverage
+  EOT
 # examples     Run the examples (tests), -c will enable coverage
-#  EOT
 
 end 
