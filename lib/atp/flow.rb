@@ -1,4 +1,6 @@
 module ATP
+  # Implements the main user API for building and interacting
+  # with an abstract test program
   class Flow
     attr_reader :program
     attr_reader :ast
@@ -9,15 +11,15 @@ module ATP
       @ast = builder.flow
     end
 
-    def test(name, options)
-      test = builder.test(name)
-      test << builder.bin(options[:bin]) if options[:bin]
-      test << builder.softbin(options[:softbin]) if options[:softbin]
-      test << builder.continue if options[:continue]
-      ast << test
+    def test(name, options = {})
+      append builder.test(name, options)
     end
 
     private
+
+    def append(node)
+      @ast = (@ast << node)
+    end
 
     def builder
       @builder

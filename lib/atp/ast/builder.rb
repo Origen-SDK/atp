@@ -1,7 +1,6 @@
 module ATP
   module AST
     class Builder
-
       def flow
         n0(:flow)
       end
@@ -10,8 +9,12 @@ module ATP
         n(:name, [str.to_s])
       end
 
-      def test(name)
-        n(:test, [self.name(name)])
+      def test(name, options = {})
+        children = [self.name(name)]
+        children << bin(options[:bin]) if options[:bin]
+        children << softbin(options[:softbin]) if options[:softbin]
+        children << continue if options[:continue]
+        n(:test, children)
       end
 
       def bin(val)
