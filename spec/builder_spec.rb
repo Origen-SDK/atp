@@ -13,15 +13,16 @@ describe 'The builder API' do
 
   it "tests can be added" do
     flow = ATP::Program.new.flow(:sort1) 
-    flow.test :test1, bin: 5
-    flow.test :test2, bin: 6, continue: true
+    flow.test :test1, on_fail: { bin: 5 }
+    flow.test :test2, on_fail: { bin: 6, continue: true }
     flow.ast.should ==
       s(:flow,
-        s(:test, s(:name, "test1"), s(:bin, 5)),
-        s(:test, s(:name, "test2"), s(:bin, 6), s(:continue)))
+        s(:test, s(:name, "test1"), s(:on_fail, s(:bin, 5)), s(:on_pass)),
+        s(:test, s(:name, "test2"), s(:on_fail, s(:bin, 6), s(:continue)), s(:on_pass))
+       )
   end
 
-  it "the base process returns the same AST" do
+  it "the base processor returns the same AST" do
     flow = ATP::Program.new.flow(:sort1) 
     flow.test :test1, bin: 5
     flow.test :test2, bin: 6, continue: true

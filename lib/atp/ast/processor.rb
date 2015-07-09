@@ -24,6 +24,8 @@ module ATP
       end
       alias on_flow process_regular_node
       alias on_test process_regular_node
+      alias on_on_fail process_regular_node
+      alias on_on_pass process_regular_node
     end
   end
 end
