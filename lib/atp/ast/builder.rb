@@ -9,10 +9,26 @@ module ATP
         n(:name, [str.to_s])
       end
 
+      def description(str)
+        n(:description, [str.to_s])
+      end
+
+      def id(symbol)
+        n(:id, [symbol.to_sym])
+      end
+
+      def if_failed(symbol)
+        n(:if_failed, [symbol.to_sym])
+      end
+
       def test(name, options = {})
         children = [self.name(name)]
         children << on_fail(options[:on_fail] || {})
         children << on_pass(options[:on_pass] || {})
+        d = options[:description] || options[:desc]
+        children << description(d) if d
+        children << id(options[:id]) if options[:id]
+        children << if_failed(options[:if_failed]) if options[:if_failed]
         n(:test, children)
       end
 

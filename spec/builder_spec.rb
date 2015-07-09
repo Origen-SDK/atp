@@ -21,11 +21,4 @@ describe 'The builder API' do
         s(:test, s(:name, "test2"), s(:on_fail, s(:bin, 6), s(:continue)), s(:on_pass))
        )
   end
-
-  it "the base processor returns the same AST" do
-    flow = ATP::Program.new.flow(:sort1) 
-    flow.test :test1, bin: 5
-    flow.test :test2, bin: 6, continue: true
-    ATP::AST::Processor.new.process(flow.ast).should == flow.ast
-  end
 end
