@@ -35,6 +35,12 @@ module ATP
       alias_method :on_on_fail, :process_regular_node
       alias_method :on_on_pass, :process_regular_node
 
+      def process_condition_node(node)
+        node.updated(nil, process_all(node))
+      end
+      alias_method :on_flow_flag, :process_condition_node
+      alias_method :on_test_result, :process_condition_node
+
       def on_test(node)
         children = process_all(node)
         children.each do |child|

@@ -21,15 +21,50 @@ module ATP
         n(:if_failed, [symbol.to_sym])
       end
 
+      def flow_flag(name, enabled, node)
+        n(:flow_flag, [name, enabled, node])
+      end
+
+      def test_result(id, passed, node)
+        n(:test_result, [id, passed, node])
+      end
+
+      def apply_conditions(node, conditions)
+        conditions.each do |key, value|
+          key = key.to_s.downcase.to_sym
+          case key
+          when :if_enabled, :enabled, :enable_flag
+            node = flow_flag(value, true, node)
+          when :unless_enabled, :not_enabled, :disabled
+            node = flow_flag(value, false, node)
+          when :if_failed
+            node = test_result(value, false, node)
+          else
+            fail "Unknown test condition attribute - #{key} (#{val})"
+          end
+        end
+        node
+      end
+
       def test(name, options = {})
         children = [self.name(name)]
-        children << on_fail(options[:on_fail] || {})
-        children << on_pass(options[:on_pass] || {})
+
         d = options[:description] || options[:desc]
         children << description(d) if d
-        children << id(options[:id]) if options[:id]
+        children << id(options[:id].to_s.downcase.to_sym) if options[:id]
+
+        children << on_fail(options[:on_fail]) if options[:on_fail]
+        children << on_pass(options[:on_pass]) if options[:on_pass]
+
         children << if_failed(options[:if_failed]) if options[:if_failed]
-        n(:test, children)
+
+        test = n(:test, children)
+
+        if options[:conditions]
+          apply_conditions(test, options[:conditions])
+        else
+          test
+        end
       end
 
       def on_fail(options = {})
