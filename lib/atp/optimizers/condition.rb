@@ -1,6 +1,9 @@
 module ATP
-  module Processor
-    class ConditionOptimizer < Base
+  module Optimizers
+    # This optimizes the condition nodes such that any adjacent flow nodes that
+    # have the same condition, will be grouped together under a single condition
+    # wrapper.
+    class Condition < Processor
 
       CONDITION_NODES = [:flow_flag, :test_result]
 

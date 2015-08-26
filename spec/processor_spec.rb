@@ -1,17 +1,17 @@
 require 'spec_helper'
 require 'ast'
 
-describe 'The AST processors' do
+describe 'The base processor' do
   include AST::Sexp
 
-  it "the base processor returns the same AST" do
+  it "returns the same AST" do
     flow = ATP::Program.new.flow(:sort1) 
     flow.test :test1, on_fail: { bin: 5 }
     flow.test :test2, on_fail: { bin: 6, continue: true }
-    ATP::Processor::Base.new.process(flow.raw).should == flow.raw
+    ATP::Processor.new.process(flow.raw).should == flow.raw
   end
 
-  it "the base processor finds IDs of tests that have dependents" do
+  it "finds IDs of tests that have dependents" do
     flow = ATP::Program.new.flow(:sort1) 
     flow.test :test1, on_fail: { bin: 5 }, id: :t1
     flow.test :test2, on_fail: { bin: 5 }, id: :t2
@@ -19,7 +19,7 @@ describe 'The AST processors' do
     flow.test :test4, on_fail: { bin: 5 }, id: :t4, if_failed: :t2
     flow.test :test5, on_fail: { bin: 5 }, id: :t5
     flow.test :test6, on_fail: { bin: 5 }, id: :t6, if_failed: :t4
-    p = ATP::Processor::Base.new
+    p = ATP::Processor.new
     p.process(flow.raw)
     p.tests_with_dependents.should == [:t2, :t4]
   end
