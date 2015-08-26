@@ -17,29 +17,22 @@ module ATP
         @tests_with_dependents = []
       end
 
-      def process_terminal_node(node)
-        node
-      end
-      alias_method :on_continue, :process_terminal_node
-      alias_method :on_bin, :process_terminal_node
-      alias_method :on_softbin, :process_terminal_node
-      alias_method :on_name, :process_terminal_node
-      alias_method :on_description, :process_terminal_node
-      alias_method :on_id, :process_terminal_node
-      alias_method :on_if_failed, :process_terminal_node
-
-      def process_regular_node(node)
+      # Process nodes where all of their children are also nodes
+      def on_node_with_node_children(node)
         node.updated(nil, process_all(node))
       end
-      alias_method :on_flow, :process_regular_node
-      alias_method :on_on_fail, :process_regular_node
-      alias_method :on_on_pass, :process_regular_node
+      alias_method :on_flow, :on_node_with_node_children
+      alias_method :on_on_fail, :on_node_with_node_children
+      alias_method :on_on_pass, :on_node_with_node_children
 
-      def process_condition_node(node)
-        node.updated(nil, process_all(node))
+      def on_condition(node)
+        children = node.children.dup
+        name = children.shift
+        state = children.shift
+        node.updated(nil, [name, state, process_all(children)].flatten)
       end
-      alias_method :on_flow_flag, :process_condition_node
-      alias_method :on_test_result, :process_condition_node
+      alias_method :on_flow_flag, :on_condition
+      alias_method :on_test_result, :on_condition
 
       def on_test(node)
         children = process_all(node)

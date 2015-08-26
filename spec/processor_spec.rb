@@ -8,10 +8,10 @@ describe 'The AST processors' do
     flow = ATP::Program.new.flow(:sort1) 
     flow.test :test1, on_fail: { bin: 5 }
     flow.test :test2, on_fail: { bin: 6, continue: true }
-    ATP::Processor::Base.new.process(flow.ast).should == flow.ast
+    ATP::Processor::Base.new.process(flow.raw).should == flow.raw
   end
 
-  it "finds IDs of tests that have dependents" do
+  it "the base processor finds IDs of tests that have dependents" do
     flow = ATP::Program.new.flow(:sort1) 
     flow.test :test1, on_fail: { bin: 5 }, id: :t1
     flow.test :test2, on_fail: { bin: 5 }, id: :t2
@@ -20,7 +20,7 @@ describe 'The AST processors' do
     flow.test :test5, on_fail: { bin: 5 }, id: :t5
     flow.test :test6, on_fail: { bin: 5 }, id: :t6, if_failed: :t4
     p = ATP::Processor::Base.new
-    p.process(flow.ast)
+    p.process(flow.raw)
     p.tests_with_dependents.should == [:t2, :t4]
   end
 end

@@ -3,12 +3,19 @@ module ATP
   # with an abstract test program
   class Flow
     attr_reader :program
-    attr_reader :ast
+    # Returns the raw AST
+    attr_reader :raw
 
     def initialize(program)
       @program = program
       @builder = AST::Builder.new
-      @ast = builder.flow
+      @raw = builder.flow
+    end
+
+    # Returns a processed/optimized AST, this is the one that should be
+    # used to build and represent the given test flow
+    def ast
+      ATP::Processor::Base.new.process(raw)
     end
 
     # Add a test line to the flow
@@ -27,7 +34,7 @@ module ATP
     private
 
     def append(node)
-      @ast = (@ast << node)
+      @raw = (@raw << node)
     end
 
     def builder

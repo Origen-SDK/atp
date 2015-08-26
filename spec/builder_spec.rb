@@ -8,14 +8,14 @@ describe 'The builder API' do
     prog = ATP::Program.new
     flow = prog.flow(:sort1)
     flow.program.should == prog
-    flow.ast.should be
+    flow.raw.should be
   end
 
   it "tests can be added" do
     flow = ATP::Program.new.flow(:sort1) 
     flow.test :test1, on_fail: { bin: 5 }
     flow.test :test2, on_fail: { bin: 6, continue: true }
-    flow.ast.should ==
+    flow.raw.should ==
       s(:flow,
         s(:test,
           s(:name, "test1"),
@@ -34,7 +34,7 @@ describe 'The builder API' do
     flow.test :test2, id: "T2" # Test that strings will be accepted for IDs
     flow.test :test3, conditions: { if_enabled: "bitmap" }
     flow.test :test4, conditions: { unless_enabled: "bitmap", if_failed: :t1 }
-    flow.ast.should ==
+    flow.raw.should ==
       s(:flow,
         s(:test,
           s(:name, "test1"),
