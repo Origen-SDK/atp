@@ -101,4 +101,42 @@ describe 'The Condition Optimizer' do
               s(:test,
                 s(:name, "test4"))))))
   end
+
+  it "combined condition and group test" do
+    ast =
+      s(:flow,
+        s(:group, "g1",
+          s(:test,
+            s(:name, "test1")),
+          s(:flow_flag, "bitmap", true,
+            s(:test,
+              s(:name, "test2")))),
+        s(:flow_flag, "bitmap", true,
+          s(:group, "g1",
+            s(:flow_flag, "x", true,
+              s(:test,
+                s(:name, "test3"))),
+            s(:flow_flag, "y", true,
+              s(:flow_flag, "x", true,
+                s(:test,
+                  s(:name, "test4")))))))
+
+    puts ast.inspect
+    p = ATP::Optimizers::Condition.new
+    puts p.process(ast).inspect
+    p.process(ast).should ==
+      s(:flow,
+        s(:group, "g1",
+          s(:test,
+            s(:name, "test1")),
+          s(:flow_flag, "bitmap", true,
+            s(:test,
+              s(:name, "test2")),
+            s(:flow_flag, "x", true,
+              s(:test,
+                s(:name, "test3")),
+              s(:flow_flag, "y", true,
+                s(:test,
+                  s(:name, "test4")))))))
+  end
 end

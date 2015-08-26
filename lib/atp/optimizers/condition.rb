@@ -3,16 +3,70 @@ module ATP
     # This optimizes the condition nodes such that any adjacent flow nodes that
     # have the same condition, will be grouped together under a single condition
     # wrapper.
+    #
+    # For example this AST:
+    #
+    #   (flow
+    #     (group "g1"
+    #       (test
+    #         (name "test1"))
+    #       (flow-flag "bitmap" true
+    #         (test
+    #           (name "test2"))))
+    #     (flow-flag "bitmap" true
+    #       (group "g1"
+    #         (flow-flag "x" true
+    #           (test
+    #             (name "test3")))
+    #         (flow-flag "y" true
+    #           (flow-flag "x" true
+    #             (test
+    #               (name "test4")))))))
+    #
+    # Will be optimized to this:              
+    #
+    #   (flow
+    #     (group "g1"
+    #       (test
+    #         (name "test1"))
+    #       (flow-flag "bitmap" true
+    #         (test
+    #           (name "test2"))
+    #         (flow-flag "x" true
+    #           (test
+    #             (name "test3"))
+    #           (flow-flag "y" true
+    #             (test
+    #               (name "test4")))))))
+    #
     class Condition < Processor
 
       CONDITION_NODES = [:flow_flag, :test_result, :group]
+
+      def process(node)
+        # Bit of a hack - To get all of the nested conditions optimized away it is necessary
+        # to execute this recursively a few times. This guard ensures that the recursion is
+        # only performed on the top-level and not on every process operation.
+        if @top_level_called
+          super
+        else
+          @top_level_called = true
+          ast1 = nil
+          ast2 = node
+          while ast1 != ast2 do
+            ast1 = super(ast2)
+            ast2 = super(ast1)
+          end
+          @top_level_called = false
+          ast1
+        end
+      end
 
       def on_condition(node)
         children = node.children.dup
         name = children.shift
         state = children.shift
-        n = ATP::AST::Node.new(:temp, children)
-        children = optimize_siblings(n)
+        children = optimize_siblings(n(:temp, children))
         if condition_to_be_removed?(node)
           process_all(children)
         else
@@ -25,8 +79,7 @@ module ATP
       def on_group(node)
         children = node.children.dup
         name = children.shift
-        n = ATP::AST::Node.new(:temp, children)
-        children = optimize_siblings(n)
+        children = optimize_siblings(n(:temp, children))
         if condition_to_be_removed?(node)
           process_all(children)
         else
