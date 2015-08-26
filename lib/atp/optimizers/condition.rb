@@ -5,7 +5,7 @@ module ATP
     # wrapper.
     class Condition < Processor
 
-      CONDITION_NODES = [:flow_flag, :test_result]
+      CONDITION_NODES = [:flow_flag, :test_result, :group]
 
       def on_condition(node)
         children = node.children.dup
@@ -22,6 +22,18 @@ module ATP
       alias_method :on_flow_flag, :on_condition
       alias_method :on_test_result, :on_condition
 
+      def on_group(node)
+        children = node.children.dup
+        name = children.shift
+        n = ATP::AST::Node.new(:temp, children)
+        children = optimize_siblings(n)
+        if condition_to_be_removed?(node)
+          process_all(children)
+        else
+          node.updated(nil, [name, process_all(children)].flatten)
+        end
+      end
+
       # Returns true if the given node contains the given condition within
       # its immediate children
       def has_condition?(condition, node)
@@ -37,7 +49,13 @@ module ATP
       end
 
       def equal_conditions?(node1, node2)
-        node1.to_a.take(2) == node2.to_a.take(2)
+        if node1.type == node2.type
+          if node1.type == :group
+            node1.to_a.take(1) == node2.to_a.take(1)
+          else
+            node1.to_a.take(2) == node2.to_a.take(2)
+          end
+        end
       end
 
       def condition?(node)

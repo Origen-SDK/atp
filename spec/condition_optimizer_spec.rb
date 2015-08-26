@@ -37,8 +37,6 @@ describe 'The Condition Optimizer' do
   end
 
   it "wraps nested conditions" do
-    # You can't really generate a flow AST like this from the exposed API, but
-    # just to check it will deal with them in case it is possible in future
     ast =
       s(:flow,
         s(:test,
@@ -67,6 +65,39 @@ describe 'The Condition Optimizer' do
             s(:test,
               s(:name, "test3")),
             s(:flow_flag, "y", true,
+              s(:test,
+                s(:name, "test4"))))))
+  end
+
+  it "optimizes groups too" do
+    ast =
+      s(:flow,
+        s(:test,
+          s(:name, "test1")),
+        s(:group, "g1",
+          s(:test,
+            s(:name, "test2"))),
+        s(:group, "g1",
+          s(:group, "g2",
+            s(:test,
+              s(:name, "test3"))),
+          s(:group, "g2",
+            s(:group, "g3",
+              s(:test,
+                s(:name, "test4"))))))
+    p = ATP::Optimizers::Condition.new
+    #puts p.process(ast).inspect
+    p.process(ast).should ==
+      s(:flow,
+        s(:test,
+          s(:name, "test1")),
+        s(:group, "g1",
+          s(:test,
+            s(:name, "test2")),
+          s(:group, "g2",
+            s(:test,
+              s(:name, "test3")),
+            s(:group, "g3",
               s(:test,
                 s(:name, "test4"))))))
   end
