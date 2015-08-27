@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'ast'
 
-describe 'The Condition Optimizer' do
+describe 'The Condition Processor' do
   include AST::Sexp
 
   it "wraps adjacent nodes that share the same conditions" do
@@ -21,7 +21,7 @@ describe 'The Condition Optimizer' do
           s(:flow_flag, "bitmap", true,
             s(:test,
               s(:name, "test3")))))
-    p = ATP::Optimizers::Condition.new
+    p = ATP::Processors::Condition.new
     #puts p.process(flow.raw).inspect
     p.process(flow.raw).should ==
       s(:flow,
@@ -52,7 +52,7 @@ describe 'The Condition Optimizer' do
             s(:flow_flag, "y", true,
               s(:test,
                 s(:name, "test4"))))))
-    p = ATP::Optimizers::Condition.new
+    p = ATP::Processors::Condition.new
     #puts p.process(ast).inspect
     p.process(ast).should ==
       s(:flow,
@@ -85,7 +85,7 @@ describe 'The Condition Optimizer' do
             s(:group, "g3",
               s(:test,
                 s(:name, "test4"))))))
-    p = ATP::Optimizers::Condition.new
+    p = ATP::Processors::Condition.new
     #puts p.process(ast).inspect
     p.process(ast).should ==
       s(:flow,
@@ -121,9 +121,8 @@ describe 'The Condition Optimizer' do
                 s(:test,
                   s(:name, "test4")))))))
 
-    puts ast.inspect
-    p = ATP::Optimizers::Condition.new
-    puts p.process(ast).inspect
+    p = ATP::Processors::Condition.new
+    #puts p.process(ast).inspect
     p.process(ast).should ==
       s(:flow,
         s(:group, "g1",

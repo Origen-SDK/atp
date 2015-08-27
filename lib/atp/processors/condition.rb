@@ -1,5 +1,5 @@
 module ATP
-  module Optimizers
+  module Processors
     # This optimizes the condition nodes such that any adjacent flow nodes that
     # have the same condition, will be grouped together under a single condition
     # wrapper.
