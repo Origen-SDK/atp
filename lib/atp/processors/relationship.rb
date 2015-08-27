@@ -32,7 +32,7 @@ module ATP
           @first_call_done = true
           t = ExtractTestResults.new
           t.process(node)
-          @test_results = t.results 
+          @test_results = t.results || {}
           result = super
           @first_call_done = false
         end

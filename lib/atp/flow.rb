@@ -15,7 +15,10 @@ module ATP
     # Returns a processed/optimized AST, this is the one that should be
     # used to build and represent the given test flow
     def ast
-      ATP::Processors::Condition.new.process(raw)
+      ast = Processors::PreCleaner.new.process(raw)
+      ast = Processors::Condition.new.process(ast)
+      ast = Processors::Relationship.new.process(ast)
+      ast = Processors::PostCleaner.new.process(ast)
     end
 
     # Add a test line to the flow

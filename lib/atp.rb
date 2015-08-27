@@ -15,6 +15,8 @@ module ATP
   module Processors
     autoload :Condition,    'atp/processors/condition'
     autoload :Relationship, 'atp/processors/relationship'
+    autoload :PreCleaner, 'atp/processors/pre_cleaner'
+    autoload :PostCleaner, 'atp/processors/post_cleaner'
   end
 
   # Validators are run on the processed AST to check it for common errors or
