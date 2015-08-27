@@ -1,8 +1,6 @@
 require 'spec_helper'
-require 'ast'
 
 describe 'The base processor' do
-  include AST::Sexp
 
   it "returns the same AST" do
     flow = ATP::Program.new.flow(:sort1) 

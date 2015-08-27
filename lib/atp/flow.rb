@@ -28,7 +28,7 @@ module ATP
     # @option options [Hash] :on_pass What action to take if the test passes
     # @option options [Hash] :conditions What conditions must be met to execute the test
     def test(name, options = {})
-      groups = ([options.delete(:group) || options.delete(:groups)] + open_groups.reverse).flatten.compact
+      groups = ([options.delete(:group) || options.delete(:groups)] + open_groups).flatten.compact
       options[:group] = groups unless groups.empty?
       append builder.test(name, options)
     end

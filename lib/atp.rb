@@ -13,7 +13,8 @@ module ATP
   # Processors actually modify the AST to clean and optimize the user input
   # and to implement the flow control API
   module Processors
-    autoload :Condition, 'atp/processors/condition'
+    autoload :Condition,    'atp/processors/condition'
+    autoload :Relationship, 'atp/processors/relationship'
   end
 
   # Validators are run on the processed AST to check it for common errors or

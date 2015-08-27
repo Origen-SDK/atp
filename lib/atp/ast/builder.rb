@@ -37,8 +37,10 @@ module ATP
             node = flow_flag(value, true, node)
           when :unless_enabled, :not_enabled, :disabled
             node = flow_flag(value, false, node)
-          when :if_failed
+          when :if_failed, :unless_passed, :failed
             node = test_result(value, false, node)
+          when :if_passed, :unless_failed, :passed
+            node = test_result(value, true, node)
           else
             fail "Unknown test condition attribute - #{key} (#{val})"
           end
@@ -108,6 +110,10 @@ module ATP
 
       def n0(type)
         n(type, [])
+      end
+
+      def n1(arg)
+        n(type, [arg])
       end
     end
   end

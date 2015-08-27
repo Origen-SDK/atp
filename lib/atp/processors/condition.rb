@@ -91,7 +91,7 @@ module ATP
       # its immediate children
       def has_condition?(condition, node)
         ([node] + node.children.to_a).any? do |n|
-          if n.is_a?(ATP::AST::Node) || n.is_a?(::AST::Node)
+          if n.is_a?(ATP::AST::Node)
             equal_conditions?(condition, n)
           end
         end

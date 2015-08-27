@@ -1,9 +1,6 @@
 require 'spec_helper'
-require 'ast'
 
 describe 'The builder API' do
-  include AST::Sexp
-
   it 'is alive' do
     prog = ATP::Program.new
     flow = prog.flow(:sort1)

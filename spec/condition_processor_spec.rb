@@ -1,8 +1,6 @@
 require 'spec_helper'
-require 'ast'
 
 describe 'The Condition Processor' do
-  include AST::Sexp
 
   it "wraps adjacent nodes that share the same conditions" do
     flow = ATP::Program.new.flow(:sort1) 
