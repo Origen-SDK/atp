@@ -50,4 +50,35 @@ describe 'The builder API' do
             s(:test,
               s(:name, "test4")))))
   end
+
+  it "groups can be added" do
+    flow = ATP::Program.new.flow(:sort1) 
+    flow.test :test1
+    flow.test :test2, group: "g1"
+    flow.test :test3, group: "g1"
+    flow.group "g2" do
+      flow.test :test4
+      flow.test :test5
+      flow.test :test6, groups: ["g3", "g4"]
+    end
+    flow.ast.should ==
+      s(:flow,
+        s(:test,
+          s(:name, "test1")),
+        s(:group, "g1",
+          s(:test,
+            s(:name, "test2")),
+          s(:test,
+            s(:name, "test3"))),
+        s(:group, "g2",
+          s(:test,
+            s(:name, "test4")),
+          s(:test,
+            s(:name, "test5")),
+          s(:group, "g4",
+            s(:group, "g3",
+              s(:test,
+                s(:name, "test6"))))))
+
+  end
 end

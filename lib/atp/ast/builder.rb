@@ -17,16 +17,16 @@ module ATP
         n(:id, [symbol.to_sym])
       end
 
-      def if_failed(symbol)
-        n(:if_failed, [symbol.to_sym])
-      end
-
       def flow_flag(name, enabled, node)
         n(:flow_flag, [name, enabled, node])
       end
 
       def test_result(id, passed, node)
         n(:test_result, [id, passed, node])
+      end
+
+      def group(name, node)
+        n(:group, [name, node])
       end
 
       def apply_conditions(node, conditions)
@@ -56,9 +56,10 @@ module ATP
         children << on_fail(options[:on_fail]) if options[:on_fail]
         children << on_pass(options[:on_pass]) if options[:on_pass]
 
-        children << if_failed(options[:if_failed]) if options[:if_failed]
-
         test = n(:test, children)
+        if options[:group]
+          options[:group].each { |g| test = group(g, test) }
+        end
 
         if options[:conditions]
           apply_conditions(test, options[:conditions])
@@ -89,6 +90,10 @@ module ATP
 
       def softbin(val)
         n(:softbin, [val.to_i])
+      end
+
+      def number(val)
+        n(:number, [val.to_i])
       end
 
       def continue

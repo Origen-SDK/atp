@@ -15,7 +15,7 @@ module ATP
     # Returns a processed/optimized AST, this is the one that should be
     # used to build and represent the given test flow
     def ast
-      ATP::Processor::Base.new.process(raw)
+      ATP::Processors::Condition.new.process(raw)
     end
 
     # Add a test line to the flow
@@ -28,10 +28,29 @@ module ATP
     # @option options [Hash] :on_pass What action to take if the test passes
     # @option options [Hash] :conditions What conditions must be met to execute the test
     def test(name, options = {})
+      groups = ([options.delete(:group) || options.delete(:groups)] + open_groups.reverse).flatten.compact
+      options[:group] = groups unless groups.empty?
       append builder.test(name, options)
     end
 
+    # Group all tests generated within the given block
+    #
+    # @example
+    #   flow.group "RAM Tests" do
+    #     flow.test ...
+    #     flow.test ...
+    #   end
+    def group(name)
+      open_groups.push name
+      yield
+      open_groups.pop
+    end
+
     private
+
+    def open_groups
+      @open_groups ||= []
+    end
 
     def append(node)
       @raw = (@raw << node)
