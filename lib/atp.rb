@@ -4,6 +4,8 @@ module ATP
   autoload :Program, 'atp/program'
   autoload :Flow, 'atp/flow'
   autoload :Processor, 'atp/processor'
+  autoload :Runner, 'atp/runner'
+  autoload :Outputter, 'atp/outputter'
 
   module AST
     autoload :Node, 'atp/ast/node'
@@ -19,14 +21,19 @@ module ATP
     autoload :PostCleaner, 'atp/processors/post_cleaner'
   end
 
+  # Summerizers extract summary data from the given AST
+  module Summarizers
+  end
+
   # Validators are run on the processed AST to check it for common errors or
   # logical issues that will prevent it being rendered to a test program format
   module Validators
     autoload :Condition, 'atp/validators/condition'
   end
 
-  # Outputters are run on the processed AST to display the flow or to render
+  # Formatters are run on the processed AST to display the flow or to render
   # it to a different format
-  module Outputters
+  module Formatter
+    autoload :Datalog, 'atp/formatters/datalog'
   end
 end

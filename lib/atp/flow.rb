@@ -36,6 +36,12 @@ module ATP
       append builder.test(name, options)
     end
 
+    # Execute the given flow
+    def run(options = {})
+      executed = Outputters::Runner.new.process(ast)
+      Outputters::Datalog.new(executed)
+    end
+
     # Group all tests generated within the given block
     #
     # @example
