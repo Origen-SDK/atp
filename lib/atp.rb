@@ -6,10 +6,12 @@ module ATP
   autoload :Processor, 'atp/processor'
   autoload :Runner, 'atp/runner'
   autoload :Outputter, 'atp/outputter'
+  autoload :Parser, 'atp/parser'
 
   module AST
     autoload :Node, 'atp/ast/node'
     autoload :Builder, 'atp/ast/builder'
+    autoload :Factories, 'atp/ast/factories'
   end
 
   # Processors actually modify the AST to clean and optimize the user input

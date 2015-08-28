@@ -1,6 +1,8 @@
 module ATP
   module AST
     class Builder
+      include Factories
+
       def flow
         n0(:flow)
       end
@@ -100,20 +102,6 @@ module ATP
 
       def continue
         n0(:continue)
-      end
-
-      private
-
-      def n(type, children)
-        Node.new(type, children)
-      end
-
-      def n0(type)
-        n(type, [])
-      end
-
-      def n1(arg)
-        n(type, [arg])
       end
     end
   end
