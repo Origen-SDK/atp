@@ -40,6 +40,10 @@ def s(type, *children)
   ATP::AST::Node.new(type, children)
 end
 
+def to_ast(str)
+  ATP::AST::Node.from_sexp(str)
+end
+
 RSpec.configure do |config|
   config.formatter = OrigenFormatter
   # rspec-expectations config goes here. You can use an alternate

@@ -23,7 +23,7 @@ module ATP
     #             (test
     #               (name "test4")))))))
     #
-    # Will be optimized to this:              
+    # Will be optimized to this:
     #
     #   (flow
     #     (group "g1"
@@ -40,7 +40,6 @@ module ATP
     #               (name "test4")))))))
     #
     class Condition < Processor
-
       CONDITION_NODES = [:flow_flag, :test_result, :group]
 
       def process(node)
@@ -53,7 +52,7 @@ module ATP
           @top_level_called = true
           ast1 = nil
           ast2 = node
-          while ast1 != ast2 do
+          while ast1 != ast2
             ast1 = super(ast2)
             ast2 = super(ast1)
           end
@@ -126,7 +125,7 @@ module ATP
         top_node.to_a.each_with_index do |node, i|
           if current
             process_nodes = false
-            if has_condition?(current, node) 
+            if has_condition?(current, node)
               unprocessed_children << node
               node = nil
             else
@@ -151,7 +150,7 @@ module ATP
               children << process(node)
             end
           end
-        end  
+        end
         children.flatten
       end
 

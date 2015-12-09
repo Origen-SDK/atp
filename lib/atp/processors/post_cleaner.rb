@@ -7,7 +7,7 @@ module ATP
       # been used
       attr_reader :ids
 
-      # Extracts all ID values of tests within the given AST 
+      # Extracts all ID values of tests within the given AST
       class ExtractTestIDs < Processor
         attr_reader :results
 
@@ -35,7 +35,6 @@ module ATP
         end
         result
       end
-
 
       def on_test(node)
       end

@@ -1,7 +1,6 @@
 require 'sexpistol'
 module ATP
   class Parser < Sexpistol
-
     def initialize
       self.ruby_keyword_literals = true
     end
@@ -12,7 +11,7 @@ module ATP
 
     def to_sexp(ast_array)
       children = ast_array.map do |item|
-        if( item.is_a?(Array))
+        if  item.is_a?(Array)
           to_sexp(item)
         else
           item
@@ -20,6 +19,7 @@ module ATP
       end
       type = children.shift
       return type if type.is_a?(ATP::AST::Node)
+      type = type.to_s.gsub('-', '_').to_sym
       ATP::AST::Node.new(type, children)
     end
   end

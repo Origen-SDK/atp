@@ -7,7 +7,7 @@ module ATP
       # Returns a hash containing the IDs of all tests that have dependents
       attr_reader :test_results
 
-      # Extracts all test-result nodes from the given AST 
+      # Extracts all test-result nodes from the given AST
       class ExtractTestResults < Processor
         attr_reader :results
 
@@ -41,25 +41,25 @@ module ATP
 
       def add_pass_flag(id, node)
         node = node.ensure_node_present(:on_pass)
-        node.updated(nil, node.children.map { |n|
+        node.updated(nil, node.children.map do |n|
           if n.type == :on_pass
             n.add n1(:set_run_flag, "#{id}_passed")
           else
             n
           end
-        })
+        end)
       end
 
       def add_fail_flag(id, node)
         node = node.ensure_node_present(:on_fail)
-        node.updated(nil, node.children.map { |n|
+        node.updated(nil, node.children.map do |n|
           if n.type == :on_fail
             n = n.add n1(:set_run_flag, "#{id}_failed")
             n.ensure_node_present(:continue)
           else
             n
           end
-        })
+        end)
       end
 
       # Set flags depending on the result on tests which have dependents later
@@ -90,7 +90,7 @@ module ATP
       # Returns the ID of the give test node (if any), caller is responsible
       # for only passing test nodes
       def id(node)
-        if n = node.children.find {|c| c.type == :id }
+        if n = node.children.find { |c| c.type == :id }
           n.children.first
         end
       end

@@ -5,7 +5,7 @@ module ATP
   autoload :Flow, 'atp/flow'
   autoload :Processor, 'atp/processor'
   autoload :Runner, 'atp/runner'
-  autoload :Outputter, 'atp/outputter'
+  autoload :Formatter, 'atp/formatter'
   autoload :Parser, 'atp/parser'
 
   module AST
@@ -23,7 +23,7 @@ module ATP
     autoload :PostCleaner, 'atp/processors/post_cleaner'
   end
 
-  # Summerizers extract summary data from the given AST
+  # Summarizers extract summary data from the given AST
   module Summarizers
   end
 
@@ -35,7 +35,9 @@ module ATP
 
   # Formatters are run on the processed AST to display the flow or to render
   # it to a different format
-  module Formatter
+  module Formatters
+    autoload :Basic,   'atp/formatters/basic'
     autoload :Datalog, 'atp/formatters/datalog'
+    autoload :Graph,   'atp/formatters/graph'
   end
 end

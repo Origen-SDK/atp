@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Stephen McGinty"]
   spec.email         = ["stephen.f.mcginty@gmail.com"]
   spec.summary       = "An abstract test program model for Origen"
-  spec.homepage      = "http://origen.freescale.net/atp"
+  spec.homepage      = "http://origen-sdk.org/atp"
 
   spec.required_ruby_version     = '>= 1.9.3'
   spec.required_rubygems_version = '>= 1.8.11'

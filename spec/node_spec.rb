@@ -16,6 +16,22 @@ describe 'AST Nodes' do
               s(:name, "test3")))))
   
     ATP::AST::Node.from_sexp(node.to_sexp).to_sexp.should == node.to_sexp
+
+    ast = to_ast <<-END
+      (flow
+        (test
+          (name "test1")
+          (id "t1"))
+        (flow-flag "bitmap" true
+          (test
+            (name "test2"))
+          (test-result "t1" false
+            (test
+              (name "test3")))))
+    END
+    ast.to_sexp.should == node.to_sexp
   end
+
+
 
 end
