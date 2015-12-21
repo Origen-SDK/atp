@@ -27,9 +27,44 @@ module ATP
         end
       end
 
+      # Returns the value at the root of an AST node like this:
+      #
+      #   node # => (module-def
+      #               (module-name
+      #                 (SCALAR-ID "Instrument"))
+      #
+      #   node.value  # => "Instrument"
+      #
+      # No error checking is done and the caller is responsible for calling
+      # this only on compatible nodes
+      def value
+        val = children.first
+        val = val.children.first while val.respond_to?(:children)
+        val
+      end
+
       # Add the given nodes to the children
       def add(*nodes)
         updated(nil, children + nodes)
+      end
+
+      # Returns the first child node of the given type that is found
+      def find(type)
+        nodes = find_all(type)
+        nodes.first
+      end
+
+      # Returns an array containing all child nodes of the given type(s)
+      def find_all(*types)
+        Extractor.new.process(self, types)
+      end
+
+      def to_h
+        h = {}
+        children.each do |node|
+          h[node.type] = node.children.map { |n| n.is_a?(AST::Node) ? n.to_h : n }
+        end
+        h
       end
     end
   end

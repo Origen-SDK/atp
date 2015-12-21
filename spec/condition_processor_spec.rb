@@ -10,94 +10,94 @@ describe 'The Condition Processor' do
     flow.raw.should ==
       s(:flow,
         s(:test,
-          s(:name, "test1"),
+          s(:object, "test1"),
           s(:id, :t1)),
         s(:flow_flag, "bitmap", true,
           s(:test,
-            s(:name, "test2"))),
+            s(:object, "test2"))),
         s(:test_result, :t1, false,
           s(:flow_flag, "bitmap", true,
             s(:test,
-              s(:name, "test3")))))
+              s(:object, "test3")))))
     p = ATP::Processors::Condition.new
     #puts p.process(flow.raw).inspect
     p.process(flow.raw).should ==
       s(:flow,
         s(:test,
-          s(:name, "test1"),
+          s(:object, "test1"),
           s(:id, :t1)),
         s(:flow_flag, "bitmap", true,
           s(:test,
-            s(:name, "test2")),
+            s(:object, "test2")),
           s(:test_result, :t1, false,
             s(:test,
-              s(:name, "test3")))))
+              s(:object, "test3")))))
   end
 
   it "wraps nested conditions" do
     ast =
       s(:flow,
         s(:test,
-          s(:name, "test1")),
+          s(:object, "test1")),
         s(:flow_flag, "bitmap", true,
           s(:test,
-            s(:name, "test2"))),
+            s(:object, "test2"))),
         s(:flow_flag, "bitmap", true,
           s(:flow_flag, "x", true,
             s(:test,
-              s(:name, "test3"))),
+              s(:object, "test3"))),
           s(:flow_flag, "x", true,
             s(:flow_flag, "y", true,
               s(:test,
-                s(:name, "test4"))))))
+                s(:object, "test4"))))))
     p = ATP::Processors::Condition.new
     #puts p.process(ast).inspect
     p.process(ast).should ==
       s(:flow,
         s(:test,
-          s(:name, "test1")),
+          s(:object, "test1")),
         s(:flow_flag, "bitmap", true,
           s(:test,
-            s(:name, "test2")),
+            s(:object, "test2")),
           s(:flow_flag, "x", true,
             s(:test,
-              s(:name, "test3")),
+              s(:object, "test3")),
             s(:flow_flag, "y", true,
               s(:test,
-                s(:name, "test4"))))))
+                s(:object, "test4"))))))
   end
 
   it "optimizes groups too" do
     ast =
       s(:flow,
         s(:test,
-          s(:name, "test1")),
+          s(:object, "test1")),
         s(:group, "g1",
           s(:test,
-            s(:name, "test2"))),
+            s(:object, "test2"))),
         s(:group, "g1",
           s(:group, "g2",
             s(:test,
-              s(:name, "test3"))),
+              s(:object, "test3"))),
           s(:group, "g2",
             s(:group, "g3",
               s(:test,
-                s(:name, "test4"))))))
+                s(:object, "test4"))))))
     p = ATP::Processors::Condition.new
     #puts p.process(ast).inspect
     p.process(ast).should ==
       s(:flow,
         s(:test,
-          s(:name, "test1")),
+          s(:object, "test1")),
         s(:group, "g1",
           s(:test,
-            s(:name, "test2")),
+            s(:object, "test2")),
           s(:group, "g2",
             s(:test,
-              s(:name, "test3")),
+              s(:object, "test3")),
             s(:group, "g3",
               s(:test,
-                s(:name, "test4"))))))
+                s(:object, "test4"))))))
   end
 
   it "combined condition and group test" do
@@ -105,19 +105,19 @@ describe 'The Condition Processor' do
       s(:flow,
         s(:group, "g1",
           s(:test,
-            s(:name, "test1")),
+            s(:object, "test1")),
           s(:flow_flag, "bitmap", true,
             s(:test,
-              s(:name, "test2")))),
+              s(:object, "test2")))),
         s(:flow_flag, "bitmap", true,
           s(:group, "g1",
             s(:flow_flag, "x", true,
               s(:test,
-                s(:name, "test3"))),
+                s(:object, "test3"))),
             s(:flow_flag, "y", true,
               s(:flow_flag, "x", true,
                 s(:test,
-                  s(:name, "test4")))))))
+                  s(:object, "test4")))))))
 
     p = ATP::Processors::Condition.new
     #puts p.process(ast).inspect
@@ -125,15 +125,284 @@ describe 'The Condition Processor' do
       s(:flow,
         s(:group, "g1",
           s(:test,
-            s(:name, "test1")),
+            s(:object, "test1")),
           s(:flow_flag, "bitmap", true,
             s(:test,
-              s(:name, "test2")),
+              s(:object, "test2")),
             s(:flow_flag, "x", true,
               s(:test,
-                s(:name, "test3")),
+                s(:object, "test3")),
               s(:flow_flag, "y", true,
                 s(:test,
-                  s(:name, "test4")))))))
+                  s(:object, "test4")))))))
+  end
+
+  it "optimizes jobs" do
+    ast =
+      s(:flow,
+        s(:job, "p1",
+          s(:test,
+            s(:object, "test1")),
+          s(:flow_flag, "bitmap", true,
+            s(:test,
+              s(:object, "test2")))),
+        s(:flow_flag, "bitmap", true,
+          s(:job, "p1",
+            s(:flow_flag, "x", true,
+              s(:test,
+                s(:object, "test3"))),
+            s(:flow_flag, "y", true,
+              s(:flow_flag, "x", true,
+                s(:test,
+                  s(:object, "test4")))))))
+
+    p = ATP::Processors::Condition.new
+    #puts p.process(ast).inspect
+    p.process(ast).should ==
+      s(:flow,
+        s(:job, "p1",
+          s(:test,
+            s(:object, "test1")),
+          s(:flow_flag, "bitmap", true,
+            s(:test,
+              s(:object, "test2")),
+            s(:flow_flag, "x", true,
+              s(:test,
+                s(:object, "test3")),
+              s(:flow_flag, "y", true,
+                s(:test,
+                  s(:object, "test4")))))))
+  end
+
+  it "job optimization test 2" do
+    ast = to_ast <<-END
+      (flow
+        (job
+          (or "p1" "p2")
+          (test
+            (object "p1_or_p2_only_test_1")))
+        (test
+          (object "not_p1_test"))
+        (job
+          (or "p1" "p2")
+          (test
+            (object "p1_or_p2_only_test_2")))
+        (test
+          (object "not_p1_or_p2_test"))
+        (job
+          (or "p1" "p2")
+          (test
+            (object "p1_or_p2_only_test_3")))
+        (test
+          (object "another_not_p1_or_p2_test"))
+        (job
+          (or "p1" "p2")
+          (test
+            (object "p1_or_p2_only_test_4"))))
+          END
+
+    p = ATP::Processors::Condition.new
+    #puts p.process(ast).inspect
+    ast2 = to_ast <<-END
+      (flow
+        (job
+          (or "p1" "p2")
+          (test
+            (object "p1_or_p2_only_test_1")))
+        (test
+          (object "not_p1_test"))
+        (job
+          (or "p1" "p2")
+          (test
+            (object "p1_or_p2_only_test_2")))
+        (test
+          (object "not_p1_or_p2_test"))
+        (job
+          (or "p1" "p2")
+          (test
+            (object "p1_or_p2_only_test_3")))
+        (test
+          (object "another_not_p1_or_p2_test"))
+        (job
+          (or "p1" "p2")
+          (test
+            (object "p1_or_p2_only_test_4"))))
+    END
+    p.process(ast).should == ast2
+  end
+
+  it "job optimization test 3" do
+    ast = to_ast <<-END
+      (flow
+        (job
+          (or "p1" "p2")
+          (test
+            (object "p1_or_p2_only_test_1")))
+        (test
+          (object "not_p1_test"))
+        (job
+          (or "p1" "p2")
+          (test
+            (object "p1_or_p2_only_test_2")))
+        (job
+          (or "p1" "p2")
+          (test
+            (object "p1_or_p2_only_test_3")))
+        (test
+          (object "another_not_p1_or_p2_test"))
+        (job
+          (or "p1" "p2")
+          (test
+            (object "p1_or_p2_only_test_4"))))
+          END
+
+    p = ATP::Processors::Condition.new
+    #puts p.process(ast).inspect
+    ast2 = to_ast <<-END
+      (flow
+        (job
+          (or "p1" "p2")
+          (test
+            (object "p1_or_p2_only_test_1")))
+        (test
+          (object "not_p1_test"))
+        (job
+          (or "p1" "p2")
+          (test
+            (object "p1_or_p2_only_test_2"))
+          (test
+            (object "p1_or_p2_only_test_3")))
+        (test
+          (object "another_not_p1_or_p2_test"))
+        (job
+          (or "p1" "p2")
+          (test
+            (object "p1_or_p2_only_test_4"))))
+    END
+    p.process(ast).should == ast2
+  end
+
+  it "test result optimization test" do
+    ast = to_ast <<-END
+      (flow
+        (test
+          (object "test1")
+          (id "ifallb1"))
+        (test
+          (object "test2")
+          (id "ifallb2"))
+        (test-result "ifallb2" false
+          (test-result "ifallb1" false
+            (test
+              (object "test3"))))
+        (test-result "ifallb2" false
+          (test-result "ifallb1" false
+            (test
+              (object "test4"))))
+        (log "Embedded conditional tests 1")
+        (test
+          (object "test1")
+          (id "ect1_1"))
+        (test-result "ect1_1" false
+          (test
+            (object "test2")))
+        (test-result "ect1_1" false
+          (test
+            (object "test3")
+            (id "ect1_3")))
+        (test-result "ect1_3" false
+          (test-result "ect1_1" false
+            (test
+              (object "test4")))))
+          END
+
+    p = ATP::Processors::Condition.new
+    #puts p.process(ast).inspect
+    ast2 = to_ast <<-END
+      (flow
+        (test
+          (object "test1")
+          (id "ifallb1"))
+        (test
+          (object "test2")
+          (id "ifallb2"))
+        (test-result "ifallb2" false
+          (test-result "ifallb1" false
+            (test
+              (object "test3"))
+            (test
+              (object "test4"))))
+        (log "Embedded conditional tests 1")
+        (test
+          (object "test1")
+          (id "ect1_1"))
+        (test-result "ect1_1" false
+          (test
+            (object "test2"))
+          (test
+            (object "test3")
+            (id "ect1_3"))
+          (test-result "ect1_3" false
+            (test
+              (object "test4")))))
+    END
+    p.process(ast).should == ast2
+  end
+
+  it "test result optimization test 2" do
+    ast = 
+      s(:flow,
+        s(:log, "Test that if_any_failed works"),
+        s(:test,
+          s(:object, "test1"),
+          s(:id, "ifa1")),
+        s(:test,
+          s(:object, "test2"),
+          s(:id, "ifa2")),
+        s(:test_result, [:ifa1, :ifa2], false,
+          s(:test,
+            s(:object, "test3"))),
+        s(:log, "Test the block form of if_any_failed"),
+        s(:test,
+          s(:object, "test1"),
+          s(:id, "oof_passcode1")),
+        s(:test,
+          s(:object, "test2"),
+          s(:id, "oof_passcode2")),
+        s(:test_result, [:oof_passcode1, :oof_passcode2], false,
+          s(:test,
+            s(:object, "test3"))),
+        s(:test_result, [:oof_passcode1, :oof_passcode2], false,
+          s(:test,
+            s(:object, "test4"))))
+
+    p = ATP::Processors::Condition.new
+    #puts p.process(ast).inspect
+    ast2 =
+      s(:flow,
+        s(:log, "Test that if_any_failed works"),
+        s(:test,
+          s(:object, "test1"),
+          s(:id, "ifa1")),
+        s(:test,
+          s(:object, "test2"),
+          s(:id, "ifa2")),
+        s(:test_result, [:ifa1, :ifa2], false,
+          s(:test,
+            s(:object, "test3"))),
+        s(:log, "Test the block form of if_any_failed"),
+        s(:test,
+          s(:object, "test1"),
+          s(:id, "oof_passcode1")),
+        s(:test,
+          s(:object, "test2"),
+          s(:id, "oof_passcode2")),
+        s(:test_result, [:oof_passcode1, :oof_passcode2], false,
+          s(:test,
+            s(:object, "test3")),
+          s(:test,
+            s(:object, "test4"))))
+
+    p.process(ast).should == ast2
   end
 end

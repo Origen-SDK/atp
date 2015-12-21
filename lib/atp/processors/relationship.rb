@@ -12,14 +12,31 @@ module ATP
         attr_reader :results
 
         def on_test_result(node)
-          id, state = *node
-          @results ||= {}
-          @results[id] ||= {}
-          if state
-            @results[id][:passed] = true
-          else
-            @results[id][:failed] = true
+          ids, state, *children = *node
+          unless ids.is_a?(Array)
+            ids = [ids]
           end
+          ids.each do |id|
+            results[id] ||= {}
+            if state
+              results[id][:passed] = true
+            else
+              results[id][:failed] = true
+            end
+          end
+          process_all(children)
+        end
+
+        def on_test_executed(node)
+          id, state, *children = *node
+          id, state = *node
+          results[id] ||= {}
+          results[id][:executed] = true
+          process_all(children)
+        end
+
+        def results
+          @results ||= {}.with_indifferent_access
         end
       end
 
@@ -43,7 +60,8 @@ module ATP
         node = node.ensure_node_present(:on_pass)
         node.updated(nil, node.children.map do |n|
           if n.type == :on_pass
-            n.add n1(:set_run_flag, "#{id}_passed")
+            n = n.add n1(:set_run_flag, "#{id}_PASSED")
+            n.ensure_node_present(:continue)
           else
             n
           end
@@ -54,8 +72,20 @@ module ATP
         node = node.ensure_node_present(:on_fail)
         node.updated(nil, node.children.map do |n|
           if n.type == :on_fail
-            n = n.add n1(:set_run_flag, "#{id}_failed")
+            n = n.add n1(:set_run_flag, "#{id}_FAILED")
             n.ensure_node_present(:continue)
+          else
+            n
+          end
+        end)
+      end
+
+      def add_executed_flag(id, node)
+        node = node.ensure_node_present(:on_fail)
+        node = node.ensure_node_present(:on_pass)
+        node.updated(nil, node.children.map do |n|
+          if n.type == :on_pass
+            n = n.add n1(:set_run_flag, "#{id}_RAN")
           else
             n
           end
@@ -70,6 +100,7 @@ module ATP
         if test_results[nid]
           node = add_pass_flag(nid, node) if test_results[nid][:passed]
           node = add_fail_flag(nid, node) if test_results[nid][:failed]
+          node = add_executed_flag(nid, node) if test_results[nid][:executed]
         end
         node
       end
@@ -81,10 +112,19 @@ module ATP
         id = children.shift
         state = children.shift
         if state
-          n(:run_flag, ["#{id}_passed", true] + children)
+          n(:run_flag, [id_to_flag(id, 'PASSED'), true] + process_all(children))
         else
-          n(:run_flag, ["#{id}_failed", true] + children)
+          n(:run_flag, [id_to_flag(id, 'FAILED'), true] + process_all(children))
         end
+      end
+
+      # Remove test_result nodes and replace with references to the flags set
+      # up stream by the parent node
+      def on_test_executed(node)
+        children = node.children.dup
+        id = children.shift
+        state = children.shift
+        n(:run_flag, [id_to_flag(id, 'RAN'), state] + children)
       end
 
       # Returns the ID of the give test node (if any), caller is responsible
@@ -92,6 +132,14 @@ module ATP
       def id(node)
         if n = node.children.find { |c| c.type == :id }
           n.children.first
+        end
+      end
+
+      def id_to_flag(id, type)
+        if id.is_a?(Array)
+          id.map { |i| "#{i}_#{type}" }
+        else
+          "#{id}_#{type}"
         end
       end
     end

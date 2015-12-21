@@ -7,11 +7,15 @@ module ATP
   autoload :Runner, 'atp/runner'
   autoload :Formatter, 'atp/formatter'
   autoload :Parser, 'atp/parser'
+  autoload :AND, 'atp/and'
+  autoload :OR, 'atp/or'
+  autoload :NOT, 'atp/not'
 
   module AST
     autoload :Node, 'atp/ast/node'
     autoload :Builder, 'atp/ast/builder'
     autoload :Factories, 'atp/ast/factories'
+    autoload :Extractor, 'atp/ast/extractor'
   end
 
   # Processors actually modify the AST to clean and optimize the user input
@@ -39,5 +43,17 @@ module ATP
     autoload :Basic,   'atp/formatters/basic'
     autoload :Datalog, 'atp/formatters/datalog'
     autoload :Graph,   'atp/formatters/graph'
+  end
+
+  def self.or(*args)
+    OR.new(*args)
+  end
+
+  def self.and(*args)
+    AND.new(*args)
+  end
+
+  def self.not(*args)
+    NOT.new(*args)
   end
 end

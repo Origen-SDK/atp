@@ -40,7 +40,7 @@ module ATP
     #               (name "test4")))))))
     #
     class Condition < Processor
-      CONDITION_NODES = [:flow_flag, :test_result, :group]
+      CONDITION_NODES = [:flow_flag, :test_result, :test_executed, :group, :job]
 
       def process(node)
         # Bit of a hack - To get all of the nested conditions optimized away it is necessary
@@ -61,7 +61,7 @@ module ATP
         end
       end
 
-      def on_condition(node)
+      def on_boolean_condition(node)
         children = node.children.dup
         name = children.shift
         state = children.shift
@@ -69,22 +69,25 @@ module ATP
         if condition_to_be_removed?(node)
           process_all(children)
         else
-          node.updated(nil, [name, state, process_all(children)].flatten)
+          node.updated(nil, [name, state] + process_all(children))
         end
       end
-      alias_method :on_flow_flag, :on_condition
-      alias_method :on_test_result, :on_condition
+      alias_method :on_flow_flag, :on_boolean_condition
+      alias_method :on_test_result, :on_boolean_condition
+      alias_method :on_test_executed, :on_boolean_condition
 
-      def on_group(node)
+      def on_condition(node)
         children = node.children.dup
         name = children.shift
         children = optimize_siblings(n(:temp, children))
         if condition_to_be_removed?(node)
           process_all(children)
         else
-          node.updated(nil, [name, process_all(children)].flatten)
+          node.updated(nil, [name] + process_all(children))
         end
       end
+      alias_method :on_group, :on_condition
+      alias_method :on_job, :on_condition
 
       # Returns true if the given node contains the given condition within
       # its immediate children
@@ -102,7 +105,7 @@ module ATP
 
       def equal_conditions?(node1, node2)
         if node1.type == node2.type
-          if node1.type == :group
+          if node1.type == :group || node1.type == :job
             node1.to_a.take(1) == node2.to_a.take(1)
           else
             node1.to_a.take(2) == node2.to_a.take(2)
@@ -111,7 +114,7 @@ module ATP
       end
 
       def condition?(node)
-        CONDITION_NODES.include?(node.type)
+        node.is_a?(ATP::AST::Node) && CONDITION_NODES.include?(node.type)
       end
 
       def on_flow(node)
@@ -122,29 +125,34 @@ module ATP
         children = []
         unprocessed_children = []
         current = nil
+        last = top_node.children.size - 1
         top_node.to_a.each_with_index do |node, i|
+          # If a condition has been identified in a previous node
           if current
             process_nodes = false
+            # If this node has the current condition, then buffer it for later processing
+            # and continue to the next node
             if has_condition?(current, node)
               unprocessed_children << node
               node = nil
             else
               process_nodes = true
             end
-            if process_nodes || i == top_node.children.size - 1
+            if process_nodes || i == last
               remove_condition << current
               current_children = current.children + [process_all(unprocessed_children)].flatten
               unprocessed_children = []
               remove_condition.pop
-              children << current.updated(nil, current_children)
-              if node && (!condition?(node) || i == top_node.children.size - 1)
+              children << process(current.updated(nil, current_children))
+              if node && (!condition?(node) || i == last)
+                current = nil
                 children << process(node)
               else
                 current = node
               end
             end
           else
-            if condition?(node) && i != top_node.children.size - 1
+            if condition?(node) && i != last
               current = node
             else
               children << process(node)

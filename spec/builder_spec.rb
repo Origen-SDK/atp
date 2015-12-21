@@ -15,11 +15,11 @@ describe 'The builder API' do
     flow.raw.should ==
       s(:flow,
         s(:test,
-          s(:name, "test1"),
+          s(:object, "test1"),
           s(:on_fail,
             s(:bin, 5))),
         s(:test,
-          s(:name, "test2"),
+          s(:object, "test2"),
           s(:on_fail,
             s(:bin, 6),
             s(:continue))))
@@ -34,18 +34,18 @@ describe 'The builder API' do
     flow.raw.should ==
       s(:flow,
         s(:test,
-          s(:name, "test1"),
+          s(:object, "test1"),
           s(:id, :t1)),
         s(:test,
-          s(:name, "test2"),
+          s(:object, "test2"),
           s(:id, :t2)),
         s(:flow_flag, "bitmap", true,
           s(:test,
-            s(:name, "test3"))),
+            s(:object, "test3"))),
         s(:test_result, :t1, false,
           s(:flow_flag, "bitmap", false,
             s(:test,
-              s(:name, "test4")))))
+              s(:object, "test4")))))
   end
 
   it "groups can be added" do
@@ -61,21 +61,21 @@ describe 'The builder API' do
     flow.ast.should ==
       s(:flow,
         s(:test,
-          s(:name, "test1")),
+          s(:object, "test1")),
         s(:group, "g1",
           s(:test,
-            s(:name, "test2")),
+            s(:object, "test2")),
           s(:test,
-            s(:name, "test3"))),
+            s(:object, "test3"))),
         s(:group, "g2",
           s(:test,
-            s(:name, "test4")),
+            s(:object, "test4")),
           s(:test,
-            s(:name, "test5")),
+            s(:object, "test5")),
           s(:group, "g4",
             s(:group, "g3",
               s(:test,
-                s(:name, "test6"))))))
+                s(:object, "test6"))))))
 
   end
 end

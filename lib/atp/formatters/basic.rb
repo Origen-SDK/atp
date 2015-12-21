@@ -10,7 +10,7 @@ module ATP
       end
 
       def on_test(node)
-        @output += node.to_a[0].to_a[0]
+        @output += node.to_h[:name][0]
         @output += "\n"
       end
     end
