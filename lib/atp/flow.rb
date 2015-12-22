@@ -92,10 +92,10 @@ module ATP
     #     flow.test ...
     #     flow.test ...
     #   end
-    def group(name)
-      open_groups.push name
+    def group(name, options = {})
+      open_groups.push([])
       yield
-      open_groups.pop
+      append builder.group(name, open_groups.pop)
     end
 
     # Execute the given flow in the console
@@ -115,7 +115,11 @@ module ATP
     end
 
     def append(node)
-      @raw = (@raw << node)
+      if open_groups.empty?
+        @raw = @raw.updated(nil, @raw.children + [node])
+      else
+        open_groups.last << node
+      end
     end
 
     def builder

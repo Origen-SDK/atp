@@ -41,8 +41,8 @@ module ATP
         n(:test_executed, id, executed, node)
       end
 
-      def group(name, node)
-        n(:group, name, node)
+      def group(name, nodes)
+        n(:group, name, n(:members, *nodes))
       end
 
       def cz(setup, node)
@@ -64,7 +64,10 @@ module ATP
         :unless_ran, :unless_executed,
         :job, :jobs, :if_job, :if_jobs,
         :unless_job, :unless_jobs,
-        :if_any_failed, :if_all_failed
+        :if_any_failed, :unless_all_passed,
+        :if_all_failed, :unless_any_passed,
+        :if_any_passed, :unless_all_failed,
+        :if_all_passed, :unless_any_failed
       ]
 
       def apply_conditions(node, conditions)
@@ -86,11 +89,17 @@ module ATP
               fail 'if_passed only accepts one ID, use if_any_passed or if_all_passed for multiple IDs'
             end
             node = test_result(value, true, node)
-          when :if_any_failed
+          when :if_any_failed, :unless_all_passed
             node = test_result(value, false, node)
-          when :if_all_failed
+          when :if_all_failed, :unless_any_passed
             node = value.reduce(nil) do |nodes, val|
               test_result(val, false, nodes ? nodes : node)
+            end
+          when :if_any_passed, :unless_all_failed
+            node = test_result(value, true, node)
+          when :if_all_passed, :unless_any_failed
+            node = value.reduce(nil) do |nodes, val|
+              test_result(val, true, nodes ? nodes : node)
             end
           when :if_ran, :if_executed
             node = test_executed(value, true, node)
@@ -144,9 +153,6 @@ module ATP
         children << on_pass(options[:on_pass]) if options[:on_pass]
 
         test = n(:test, *children)
-        if options[:group]
-          options[:group].each { |g| test = group(g, test) }
-        end
 
         if options[:conditions]
           apply_conditions(test, options[:conditions])

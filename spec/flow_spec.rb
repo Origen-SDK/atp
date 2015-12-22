@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'The builder API' do
+describe 'The flow builder API' do
   it 'is alive' do
     prog = ATP::Program.new
     flow = prog.flow(:sort1)
@@ -51,31 +51,30 @@ describe 'The builder API' do
   it "groups can be added" do
     flow = ATP::Program.new.flow(:sort1) 
     flow.test :test1
-    flow.test :test2, group: "g1"
-    flow.test :test3, group: "g1"
-    flow.group "g2" do
-      flow.test :test4
-      flow.test :test5
-      flow.test :test6, groups: ["g3", "g4"]
+    flow.group "g1", id: :g1 do
+      flow.test :test2
+      flow.test :test3
+      flow.group "g2" do
+        flow.test :test4
+        flow.test :test5
+      end
     end
     flow.ast.should ==
       s(:flow,
         s(:test,
           s(:object, "test1")),
         s(:group, "g1",
-          s(:test,
-            s(:object, "test2")),
-          s(:test,
-            s(:object, "test3"))),
-        s(:group, "g2",
-          s(:test,
-            s(:object, "test4")),
-          s(:test,
-            s(:object, "test5")),
-          s(:group, "g4",
-            s(:group, "g3",
-              s(:test,
-                s(:object, "test6"))))))
-
+          s(:id, :g1),
+          s(:members,
+            s(:test,
+              s(:object, "test2")),
+            s(:test,
+              s(:object, "test3")),
+            s(:group, "g2",
+              s(:members,
+                s(:test,
+                  s(:object, "test4")),
+                s(:test,
+                  s(:object, "test5")))))))
   end
 end
