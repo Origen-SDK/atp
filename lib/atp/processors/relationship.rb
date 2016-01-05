@@ -58,9 +58,11 @@ module ATP
 
       def add_pass_flag(id, node)
         node = node.ensure_node_present(:on_pass)
+        node = node.ensure_node_present(:on_fail)
         node.updated(nil, node.children.map do |n|
           if n.type == :on_pass
             n = n.add n1(:set_run_flag, "#{id}_PASSED")
+          elsif n.type == :on_fail
             n.ensure_node_present(:continue)
           else
             n
@@ -102,8 +104,13 @@ module ATP
           node = add_fail_flag(nid, node) if test_results[nid][:failed]
           node = add_executed_flag(nid, node) if test_results[nid][:executed]
         end
-        node
+        if node.type == :group
+          node.updated(nil, process_all(node))
+        else
+          node
+        end
       end
+      alias_method :on_group, :on_test
 
       # Remove test_result nodes and replace with references to the flags set
       # up stream by the parent node

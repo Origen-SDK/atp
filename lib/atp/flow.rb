@@ -21,6 +21,19 @@ module ATP
       ast = Processors::PostCleaner.new.process(ast)
     end
 
+    # Group all tests generated within the given block
+    #
+    # @example
+    #   flow.group "RAM Tests" do
+    #     flow.test ...
+    #     flow.test ...
+    #   end
+    def group(name, options = {})
+      open_groups.push([])
+      yield
+      append builder.group(name, open_groups.pop, options)
+    end
+
     # Add a test line to the flow
     #
     # @param [String, Symbol] the name of the test
@@ -50,8 +63,7 @@ module ATP
         options[:on_fail][:continue] = true
       end
       builder.new_context
-      groups = ([options.delete(:group) || options.delete(:groups)] + open_groups).flatten.compact
-      options[:group] = groups unless groups.empty?
+
       t = builder.test(instance, options)
       unless options[:context] == :current
         open_conditions.each do |conditions|
@@ -85,19 +97,6 @@ module ATP
     end
     alias_method :with_conditions, :with_condition
 
-    # Group all tests generated within the given block
-    #
-    # @example
-    #   flow.group "RAM Tests" do
-    #     flow.test ...
-    #     flow.test ...
-    #   end
-    def group(name, options = {})
-      open_groups.push([])
-      yield
-      append builder.group(name, open_groups.pop)
-    end
-
     # Execute the given flow in the console
     def run(options = {})
       Formatters::Datalog.run_and_format(ast, options)
@@ -105,6 +104,11 @@ module ATP
     end
 
     private
+
+    # For testing
+    def raw=(ast)
+      @raw = ast
+    end
 
     def open_conditions
       @open_conditions ||= []

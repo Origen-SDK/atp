@@ -63,18 +63,56 @@ describe 'The flow builder API' do
       s(:flow,
         s(:test,
           s(:object, "test1")),
-        s(:group, "g1",
+        s(:group, 
+          s(:name, "g1"),
           s(:id, :g1),
           s(:members,
             s(:test,
               s(:object, "test2")),
             s(:test,
               s(:object, "test3")),
-            s(:group, "g2",
+            s(:group, 
+              s(:name, "g2"),
               s(:members,
                 s(:test,
                   s(:object, "test4")),
                 s(:test,
                   s(:object, "test5")))))))
+  end
+
+  it "group dependencies are applied" do
+    flow = ATP::Program.new.flow(:sort1) 
+    flow.test :test1
+    flow.group "g1", id: :g1 do
+      flow.test :test2
+      flow.test :test3
+    end
+    flow.group "g2", conditions: { if_failed: :g1 } do
+      flow.test :test4
+      flow.test :test5
+    end
+    flow.ast.should ==
+      s(:flow,
+        s(:test,
+          s(:object, "test1")),
+        s(:group, 
+          s(:name, "g1"),
+          s(:id, :g1),
+          s(:members,
+            s(:test,
+              s(:object, "test2")),
+            s(:test,
+              s(:object, "test3"))),
+          s(:on_fail,
+            s(:set_run_flag, "g1_FAILED"),
+            s(:continue))),
+        s(:run_flag, "g1_FAILED", true,
+          s(:group, 
+            s(:name, "g2"),
+            s(:members,
+              s(:test,
+                s(:object, "test4")),
+              s(:test,
+                s(:object, "test5"))))))
   end
 end

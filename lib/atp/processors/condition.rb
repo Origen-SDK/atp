@@ -121,6 +121,10 @@ module ATP
         node.updated(nil, optimize_siblings(node))
       end
 
+      def on_members(node)
+        node.updated(nil, optimize_siblings(node))
+      end
+
       def optimize_siblings(top_node)
         children = []
         unprocessed_children = []

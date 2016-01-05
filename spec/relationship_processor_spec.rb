@@ -30,18 +30,18 @@ describe 'The Relationship Processor' do
           s(:name, "test1"),
           s(:id, :t1),
           s(:on_pass,
-            s(:set_run_flag, "t1_PASSED"),
+            s(:set_run_flag, "t1_PASSED")),
+          s(:on_fail,
             s(:continue))),
         s(:test,
           s(:name, "test2"),
           s(:id, :t2),
           s(:on_fail,
             s(:bin, 10),
-            s(:set_run_flag, "t2_FAILED"),
-            s(:continue)),
+            s(:continue),
+            s(:set_run_flag, "t2_FAILED")),
           s(:on_pass,
-            s(:set_run_flag, "t2_PASSED"),
-            s(:continue))),
+            s(:set_run_flag, "t2_PASSED"))),
         s(:run_flag, "t1_PASSED", true,
           s(:test,
             s(:name, "test3"))),
@@ -132,5 +132,100 @@ describe 'The Relationship Processor' do
             s(:object,"test3"))))
     p.process(ast).should == ast2
 
+  end
+
+  it "group-based if_failed is processed" do
+    ast = to_ast <<-END
+      (flow
+        (group
+          (name "group1")
+          (id "grp1")
+          (members
+            (test
+              (object "test1"))
+            (test
+              (object "test2"))))
+
+        (test-result "grp1" false
+          (test
+            (object "test3"))
+          (test
+            (object "test4"))))
+                END
+
+    p = ATP::Processors::Relationship.new
+    #puts p.process(ast).inspect
+    ast2 = to_ast <<-END
+      (flow
+        (group
+          (name "group1")
+          (id "grp1")
+          (members
+            (test
+              (object "test1"))
+            (test
+              (object "test2")))
+          (on-fail
+            (set-run-flag "grp1_FAILED")
+            (continue)))
+
+        (run-flag "grp1_FAILED" true
+          (test
+            (object "test3"))
+          (test
+            (object "test4"))))
+    END
+    p.process(ast).should == ast2
+  end
+
+  it "group-based if_passed is processed" do
+    ast = to_ast <<-END
+      (flow
+        (group
+          (name "group1")
+          (id "grp1")
+          (members
+            (test
+              (object "test1"))
+            (test
+              (object "test2"))))
+
+        (test-result "grp1" true
+          (group
+            (name "group2")
+            (members
+              (test
+                (object "test3"))
+              (test
+                (object "test4"))))))
+                END
+
+    p = ATP::Processors::Relationship.new
+    #puts p.process(ast).inspect
+    ast2 = to_ast <<-END
+      (flow
+        (group
+          (name "group1")
+          (id "grp1")
+          (members
+            (test
+              (object "test1"))
+            (test
+              (object "test2")))
+          (on-pass
+            (set-run-flag "grp1_PASSED"))
+          (on-fail
+            (continue)))
+
+        (run-flag "grp1_PASSED" true
+          (group
+            (name "group2")
+            (members
+              (test
+                (object "test3"))
+              (test
+                (object "test4"))))))
+    END
+    p.process(ast).should == ast2
   end
 end

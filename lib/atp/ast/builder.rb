@@ -41,8 +41,22 @@ module ATP
         n(:test_executed, id, executed, node)
       end
 
-      def group(name, nodes)
-        n(:group, name, n(:members, *nodes))
+      def group(group_name, nodes, options = {})
+        children = [name(group_name)]
+
+        children << id(options[:id].to_s.downcase.to_sym) if options[:id]
+
+        children << on_fail(options[:on_fail]) if options[:on_fail]
+        children << on_pass(options[:on_pass]) if options[:on_pass]
+
+        children << n(:members, *nodes)
+        group = n(:group, *children)
+
+        if options[:conditions]
+          apply_conditions(group, options[:conditions])
+        else
+          group
+        end
       end
 
       def cz(setup, node)
