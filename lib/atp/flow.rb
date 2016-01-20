@@ -74,6 +74,13 @@ module ATP
       t
     end
 
+    def bin(number, options = {})
+      fail 'A :type option set to :pass or :fail is required when calling bin' unless options[:type]
+      options[:bin] = number
+      options[:softbin] ||= options[:soft_bin] || options[:sbin]
+      append builder.set_result(options[:type], options)
+    end
+
     def cz(instance, cz_setup, options = {})
       options[:return] = true
       append(builder.cz(cz_setup, test(instance, options)))

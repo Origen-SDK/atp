@@ -86,7 +86,7 @@ module ATP
         node = node.ensure_node_present(:on_fail)
         node = node.ensure_node_present(:on_pass)
         node.updated(nil, node.children.map do |n|
-          if n.type == :on_pass
+          if n.type == :on_pass || n.type == :on_fail
             n = n.add n1(:set_run_flag, "#{id}_RAN")
           else
             n

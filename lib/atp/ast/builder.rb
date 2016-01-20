@@ -177,26 +177,29 @@ module ATP
 
       def on_fail(options = {})
         children = []
-        children << bin(options[:bin]) if options[:bin]
-        children << softbin(options[:softbin]) if options[:softbin]
+        if options[:bin] || options[:softbin]
+          children << set_result(:fail, bin: options[:bin], softbin: options[:softbin], description: options[:bin_description])
+        end
         children << continue if options[:continue]
         n(:on_fail, *children)
       end
 
       def on_pass(options = {})
         children = []
-        children << bin(options[:bin]) if options[:bin]
-        children << softbin(options[:softbin]) if options[:softbin]
+        if options[:bin] || options[:softbin]
+          children << set_result(:pass, bin: options[:bin], softbin: options[:softbin], description: options[:bin_description])
+        end
         children << continue if options[:continue]
         n(:on_pass, *children)
       end
 
-      def bin(val)
-        n(:bin, val.to_i)
-      end
-
-      def softbin(val)
-        n(:softbin, val.to_i)
+      def set_result(type, options = {})
+        children = []
+        children << type
+        children << n(:bin, options[:bin])  if options[:bin]
+        children << n(:softbin, options[:softbin])  if options[:softbin]
+        children << n(:description, options[:description])  if options[:description]
+        n(:set_result, *children)
       end
 
       def number(val)

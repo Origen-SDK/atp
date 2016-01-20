@@ -17,11 +17,13 @@ describe 'The flow builder API' do
         s(:test,
           s(:object, "test1"),
           s(:on_fail,
-            s(:bin, 5))),
+            s(:set_result, "fail",
+              s(:bin, 5)))),
         s(:test,
           s(:object, "test2"),
           s(:on_fail,
-            s(:bin, 6),
+            s(:set_result, "fail",
+              s(:bin, 6)),
             s(:continue))))
   end
 
