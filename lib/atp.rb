@@ -1,9 +1,11 @@
 require 'origen'
 require_relative '../config/application.rb'
+
 module ATP
   autoload :Program, 'atp/program'
   autoload :Flow, 'atp/flow'
   autoload :Processor, 'atp/processor'
+  autoload :Validator, 'atp/validator'
   autoload :Runner, 'atp/runner'
   autoload :Formatter, 'atp/formatter'
   autoload :Parser, 'atp/parser'
@@ -34,6 +36,8 @@ module ATP
   # Validators are run on the processed AST to check it for common errors or
   # logical issues that will prevent it being rendered to a test program format
   module Validators
+    autoload :DuplicateIDs, 'atp/validators/duplicate_ids'
+    autoload :MissingIDs, 'atp/validators/missing_ids'
     autoload :Condition, 'atp/validators/condition'
   end
 

@@ -4,11 +4,21 @@ module ATP
     class Node < ::AST::Node
       include Factories
 
+      attr_reader :file, :line_number
+
       def initialize(type, children = [], properties = {})
         # Always use strings instead of symbols in the AST, makes serializing
         # back and forward to a string easier
         children = children.map { |c| c.is_a?(Symbol) ? c.to_s : c }
         super type, children, properties
+      end
+
+      def source
+        if file
+          "#{file}:#{line_number}"
+        else
+          '<Sorry, lost the source file info, please include an example if you report as a bug>'
+        end
       end
 
       # Create a new node from the given S-expression (a string)

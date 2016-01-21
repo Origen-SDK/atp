@@ -2,12 +2,13 @@ module ATP
   # Implements the main user API for building and interacting
   # with an abstract test program
   class Flow
-    attr_reader :program
+    attr_reader :program, :name
     # Returns the raw AST
     attr_reader :raw
 
-    def initialize(program)
+    def initialize(program, name = nil)
       @program = program
+      @name = name
       @builder = AST::Builder.new
       @raw = builder.flow
     end
@@ -16,6 +17,8 @@ module ATP
     # used to build and represent the given test flow
     def ast
       ast = Processors::PreCleaner.new.process(raw)
+      Validators::DuplicateIDs.new(self).process(ast)
+      Validators::MissingIDs.new(self).process(ast)
       ast = Processors::Condition.new.process(ast)
       ast = Processors::Relationship.new.process(ast)
       ast = Processors::PostCleaner.new.process(ast)
@@ -44,6 +47,7 @@ module ATP
     # @option options [Hash] :on_pass What action to take if the test passes
     # @option options [Hash] :conditions What conditions must be met to execute the test
     def test(instance, options = {})
+      extract_meta!(options)
       r = options.delete(:return)
       if options[:context] == :current
         options[:conditions] = builder.context[:conditions]
@@ -75,6 +79,7 @@ module ATP
     end
 
     def bin(number, options = {})
+      extract_meta!(options)
       fail 'A :type option set to :pass or :fail is required when calling bin' unless options[:type]
       options[:bin] = number
       options[:softbin] ||= options[:soft_bin] || options[:sbin]
@@ -82,6 +87,7 @@ module ATP
     end
 
     def cz(instance, cz_setup, options = {})
+      extract_meta!(options)
       options[:return] = true
       append(builder.cz(cz_setup, test(instance, options)))
     end
@@ -89,15 +95,18 @@ module ATP
 
     # Append a log message line to the flow
     def log(message, options = {})
+      extract_meta!(options)
       append builder.log(message)
     end
 
     # Insert explicitly rendered content in to the flow
     def render(str, options = {})
+      extract_meta!(options)
       append builder.render(str)
     end
 
     def with_condition(options)
+      extract_meta!(options)
       open_conditions.push(options)
       yield
       open_conditions.pop
@@ -111,6 +120,11 @@ module ATP
     end
 
     private
+
+    def extract_meta!(options)
+      builder.source_file = options.delete(:source_file) if options[:source_file]
+      builder.source_line_number = options.delete(:source_line_number) if options[:source_line_number]
+    end
 
     # For testing
     def raw=(ast)

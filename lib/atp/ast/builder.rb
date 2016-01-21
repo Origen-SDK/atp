@@ -4,6 +4,7 @@ module ATP
       include Factories
 
       attr_reader :context
+      attr_accessor :source_file, :source_line_number
 
       def flow
         n0(:flow)
