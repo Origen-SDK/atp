@@ -38,7 +38,6 @@ module ATP
         if @group_ids.last
           children = node.children.reject do |n|
             if n.type == :id
-              debugger if $yo
               @group_ids.last == process(n).value
             end
           end

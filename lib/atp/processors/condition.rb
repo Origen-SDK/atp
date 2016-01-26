@@ -137,7 +137,6 @@ module ATP
         top_node.to_a.each_with_index do |node, i|
           # If a condition has been identified in a previous node
           if current
-            debugger
             process_nodes = false
             # If this node has the current condition, then buffer it for later processing
             # and continue to the next node
