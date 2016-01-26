@@ -49,30 +49,22 @@ module ATP
     def test(instance, options = {})
       extract_meta!(options)
       r = options.delete(:return)
-      if options[:context] == :current
-        options[:conditions] = builder.context[:conditions]
-      end
-      # Allows any continue, bin, or soft bin argument passed in at the options top-level to be assumed
-      # to be the action to take if the test fails
-      if b = options.delete(:bin)
-        options[:on_fail] ||= {}
-        options[:on_fail][:bin] = b
-      end
-      if b = options.delete(:softbin) || b = options.delete(:sbin) || b = options.delete(:soft_bin)
-        options[:on_fail] ||= {}
-        options[:on_fail][:softbin] = b
-      end
-      if options.delete(:continue)
-        options[:on_fail] ||= {}
-        options[:on_fail][:continue] = true
-      end
-      builder.new_context
-
-      t = builder.test(instance, options)
-      unless options[:context] == :current
-        open_conditions.each do |conditions|
-          t = builder.apply_conditions(t, conditions)
+      t = apply_open_conditions(options) do |options|
+        # Allows any continue, bin, or soft bin argument passed in at the options top-level to be assumed
+        # to be the action to take if the test fails
+        if b = options.delete(:bin)
+          options[:on_fail] ||= {}
+          options[:on_fail][:bin] = b
         end
+        if b = options.delete(:softbin) || b = options.delete(:sbin) || b = options.delete(:soft_bin)
+          options[:on_fail] ||= {}
+          options[:on_fail][:softbin] = b
+        end
+        if options.delete(:continue)
+          options[:on_fail] ||= {}
+          options[:on_fail][:continue] = true
+        end
+        builder.test(instance, options)
       end
       append(t) unless r
       t
@@ -80,23 +72,49 @@ module ATP
 
     def bin(number, options = {})
       extract_meta!(options)
-      fail 'A :type option set to :pass or :fail is required when calling bin' unless options[:type]
-      options[:bin] = number
-      options[:softbin] ||= options[:soft_bin] || options[:sbin]
-      append builder.set_result(options[:type], options)
+      t = apply_open_conditions(options) do |options|
+        fail 'A :type option set to :pass or :fail is required when calling bin' unless options[:type]
+        options[:bin] = number
+        options[:softbin] ||= options[:soft_bin] || options[:sbin]
+        builder.set_result(options[:type], options)
+      end
+      append(t)
     end
 
     def cz(instance, cz_setup, options = {})
       extract_meta!(options)
-      options[:return] = true
-      append(builder.cz(cz_setup, test(instance, options)))
+      t = apply_open_conditions(options) do |options|
+        builder.cz(cz_setup, test(instance, return: true), options)
+      end
+      append(t)
     end
     alias_method :characterize, :cz
 
     # Append a log message line to the flow
     def log(message, options = {})
       extract_meta!(options)
-      append builder.log(message)
+      t = apply_open_conditions(options) do |options|
+        builder.log(message, options)
+      end
+      append(t)
+    end
+
+    # Enable a flow control variable
+    def enable(var, options = {})
+      extract_meta!(options)
+      t = apply_open_conditions(options) do |options|
+        builder.enable_flow_flag(var, options)
+      end
+      append(t)
+    end
+
+    # Disable a flow control variable
+    def disable(var, options = {})
+      extract_meta!(options)
+      t = apply_open_conditions(options) do |options|
+        builder.disable_flow_flag(var, options)
+      end
+      append(t)
     end
 
     # Insert explicitly rendered content in to the flow
@@ -120,6 +138,20 @@ module ATP
     end
 
     private
+
+    def apply_open_conditions(options)
+      if options[:context] == :current
+        options[:conditions] = builder.context[:conditions]
+      end
+      builder.new_context
+      t = yield(options)
+      unless options[:context] == :current
+        open_conditions.each do |conditions|
+          t = builder.apply_conditions(t, conditions)
+        end
+      end
+      t
+    end
 
     def extract_meta!(options)
       builder.source_file = options.delete(:source_file) if options[:source_file]

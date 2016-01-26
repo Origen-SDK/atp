@@ -14,8 +14,13 @@ module ATP
         n(:name, str.to_s)
       end
 
-      def log(str)
-        n(:log, str.to_s)
+      def log(str, options = {})
+        test = n(:log, str.to_s)
+        if options[:conditions]
+          apply_conditions(test, options[:conditions])
+        else
+          test
+        end
       end
 
       def render(str)
@@ -42,6 +47,24 @@ module ATP
         n(:test_executed, id, executed, node)
       end
 
+      def enable_flow_flag(var, options = {})
+        test = n(:enable_flow_flag, var)
+        if options[:conditions]
+          apply_conditions(test, options[:conditions])
+        else
+          test
+        end
+      end
+
+      def disable_flow_flag(var, options = {})
+        test = n(:disable_flow_flag, var)
+        if options[:conditions]
+          apply_conditions(test, options[:conditions])
+        else
+          test
+        end
+      end
+
       def group(group_name, nodes, options = {})
         children = [name(group_name)]
 
@@ -60,8 +83,13 @@ module ATP
         end
       end
 
-      def cz(setup, node)
-        n(:cz, setup, node)
+      def cz(setup, node, options = {})
+        test = n(:cz, setup, node)
+        if options[:conditions]
+          apply_conditions(test, options[:conditions])
+        else
+          test
+        end
       end
 
       def new_context
@@ -200,7 +228,13 @@ module ATP
         children << n(:bin, options[:bin])  if options[:bin]
         children << n(:softbin, options[:softbin])  if options[:softbin]
         children << n(:description, options[:description])  if options[:description]
-        n(:set_result, *children)
+        result = n(:set_result, *children)
+
+        if options[:conditions]
+          apply_conditions(result, options[:conditions])
+        else
+          result
+        end
       end
 
       def number(val)

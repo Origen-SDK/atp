@@ -238,4 +238,147 @@ describe 'AST optimization' do
     flow(ast).ast.should == optimized
   end
 
+  it "test 2" do
+    ast = 
+      s(:flow,
+        s(:test,
+          s(:object, "t1"),
+          s(:id, "check_drb_completed")),
+        s(:test_result, "check_drb_completed", false,
+          s(:test,
+            s(:object, "nvm_pass_rd_prb1_temp_old"),
+            s(:name, "nvm_pass_rd_prb1_temp_old"),
+            s(:number, 204016080),
+            s(:id, "check_prb1_new"),
+            s(:on_fail,
+              s(:set_result, "fail",
+                s(:bin, 204),
+                s(:softbin, 204))))),
+        s(:test_result, "check_drb_completed", false,
+          s(:test_result, "check_prb1_new", false,
+            s(:test,
+              s(:object, "nvm_pass_rd_prb1_temp"),
+              s(:name, "nvm_pass_rd_prb1_temp"),
+              s(:number, 204016100),
+              s(:on_fail,
+                s(:set_result, "fail",
+                  s(:bin, 204),
+                  s(:softbin, 204)))))),
+        s(:test_result, "check_drb_completed", false,
+          s(:flow_flag, "data_collection", true,
+            s(:flow_flag, "data_collection", true,
+              s(:test,
+                s(:object, "nvm_dist_vcg"),
+                s(:name, "PostDRB"),
+                s(:number, 16120),
+                s(:on_fail,
+                  s(:continue)))))),
+        s(:flow_flag, "data_collection_all", true,
+          s(:test_result, "check_drb_completed", false,
+            s(:test,
+              s(:object, "nvm_dist_vcg_f"),
+              s(:name, "PostDRBFW"),
+              s(:number, 16290),
+              s(:on_fail,
+                s(:continue))))),
+        s(:flow_flag, "data_collection_all", true,
+          s(:test_result, "check_drb_completed", false,
+            s(:test,
+              s(:object, "nvm_dist_vcg_t"),
+              s(:name, "PostDRBTIFR"),
+              s(:number, 16460),
+              s(:on_fail,
+                s(:continue))))),
+        s(:flow_flag, "data_collection_all", true,
+          s(:test_result, "check_drb_completed", false,
+            s(:test,
+              s(:object, "nvm_dist_vcg_u"),
+              s(:name, "PostDRBUIFR"),
+              s(:number, 16630),
+              s(:on_fail,
+                s(:continue))))))
+
+    flow(ast).ast.should == 
+      s(:flow,
+        s(:test,
+          s(:object, "t1"),
+          s(:id, "check_drb_completed"),
+          s(:on_fail,
+            s(:set_run_flag, "check_drb_completed_FAILED"),
+            s(:continue))),
+        s(:run_flag, "check_drb_completed_FAILED", true,
+          s(:test,
+            s(:object, "nvm_pass_rd_prb1_temp_old"),
+            s(:name, "nvm_pass_rd_prb1_temp_old"),
+            s(:number, 204016080),
+            s(:id, "check_prb1_new"),
+            s(:on_fail,
+              s(:set_result, "fail",
+                s(:bin, 204),
+                s(:softbin, 204)),
+              s(:set_run_flag,"check_prb1_new_FAILED"),
+              s(:continue))),
+          s(:run_flag, "check_prb1_new_FAILED", true,
+            s(:test,
+              s(:object, "nvm_pass_rd_prb1_temp"),
+              s(:name, "nvm_pass_rd_prb1_temp"),
+              s(:number, 204016100),
+              s(:on_fail,
+                s(:set_result, "fail",
+                  s(:bin, 204),
+                  s(:softbin, 204))))),
+          s(:flow_flag, "data_collection", true,
+            s(:test,
+              s(:object, "nvm_dist_vcg"),
+              s(:name, "PostDRB"),
+              s(:number, 16120),
+              s(:on_fail,
+                s(:continue)))),
+          s(:flow_flag, "data_collection_all", true,
+            s(:test,
+              s(:object, "nvm_dist_vcg_f"),
+              s(:name, "PostDRBFW"),
+              s(:number, 16290),
+              s(:on_fail,
+                s(:continue))),
+            s(:test,
+              s(:object, "nvm_dist_vcg_t"),
+              s(:name, "PostDRBTIFR"),
+              s(:number, 16460),
+              s(:on_fail,
+                s(:continue))),
+            s(:test,
+              s(:object, "nvm_dist_vcg_u"),
+              s(:name, "PostDRBUIFR"),
+              s(:number, 16630),
+              s(:on_fail,
+                s(:continue))))))
+  end
+
+  it "embedded common rules test" do
+    ast = to_ast <<-END
+      (flow
+        (job "j1"
+          (flow_flag "bitmap" true
+            (test
+              (object "test1"))))
+        (job "j2"
+          (flow_flag "bitmap" true
+            (test
+              (object "test1")))))
+    END
+
+    optimized = to_ast <<-END
+      (flow
+        (flow_flag "bitmap" true
+          (job "j1"
+            (test
+              (object "test1")))
+          (job "j2"
+            (test
+              (object "test1")))))
+    END
+
+    flow(ast).ast.should == optimized
+  end
 end

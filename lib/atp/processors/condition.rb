@@ -65,7 +65,9 @@ module ATP
         children = node.children.dup
         name = children.shift
         state = children.shift
+        remove_condition << node
         children = optimize_siblings(n(:temp, children))
+        remove_condition.pop
         if condition_to_be_removed?(node)
           process_all(children)
         else
@@ -79,7 +81,9 @@ module ATP
       def on_condition(node)
         children = node.children.dup
         name = children.shift
+        remove_condition << node
         children = optimize_siblings(n(:temp, children))
+        remove_condition.pop
         if condition_to_be_removed?(node)
           process_all(children)
         else
@@ -100,7 +104,7 @@ module ATP
       end
 
       def condition_to_be_removed?(node)
-        remove_condition.last && equal_conditions?(remove_condition.last, node)
+        remove_condition.any? { |c| equal_conditions?(c, node) }
       end
 
       def equal_conditions?(node1, node2)
@@ -133,6 +137,7 @@ module ATP
         top_node.to_a.each_with_index do |node, i|
           # If a condition has been identified in a previous node
           if current
+            debugger
             process_nodes = false
             # If this node has the current condition, then buffer it for later processing
             # and continue to the next node
