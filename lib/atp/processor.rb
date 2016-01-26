@@ -11,6 +11,10 @@ module ATP
   class Processor
     include ::AST::Processor::Mixin
 
+    def run(node)
+      process(node)
+    end
+
     def process(node)
       if node.respond_to?(:to_ast)
         super(node)

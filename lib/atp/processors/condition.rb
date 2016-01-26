@@ -122,11 +122,17 @@ module ATP
       end
 
       def on_flow(node)
-        node.updated(nil, optimize_siblings(node))
+        # The extract_common_embedded_conditions method can probably do the whole job,
+        # but it might get a little complicated with regards to optimizing adjacent groups,
+        # so have left the original logic to have the first crack and deal with the groups
+        # for now.
+        nodes = optimize_siblings(node)
+        nodes = extract_common_embedded_conditions(nodes)
+        node.updated(nil, nodes)
       end
 
       def on_members(node)
-        node.updated(nil, optimize_siblings(node))
+        node.updated(nil, extract_common_embedded_conditions(optimize_siblings(node)))
       end
 
       def optimize_siblings(top_node)
@@ -168,6 +174,46 @@ module ATP
           end
         end
         children.flatten
+      end
+
+      def extract_common_embedded_conditions(nodes)
+        nodes = [nodes] unless nodes.is_a?(Array)
+        result = []
+        cond_a = nil
+        test_a = nil
+        ConditionExtractor.new.run(nodes).each do |cond_b, test_b|
+          if cond_a
+            common = cond_a & cond_b
+            if common.empty?
+              result << combine(cond_a, extract_common_embedded_conditions(test_a))
+              cond_a = cond_b
+              test_a = test_b
+            else
+              a = combine(cond_a - common, test_a)
+              b = combine(cond_b - common, test_b)
+              cond_a = common
+              test_a = [a, b].flatten
+            end
+          else
+            cond_a = cond_b
+            test_a = test_b
+          end
+        end
+        if nodes == [test_a]
+          nodes
+        else
+          result << combine(cond_a, extract_common_embedded_conditions(test_a))
+          result.flatten
+        end
+      end
+
+      def combine(conditions, node)
+        if conditions && !conditions.empty?
+          conditions.reverse_each do |n|
+            node = n.updated(nil, n.children + (node.is_a?(Array) ? node : [node]))
+          end
+        end
+        node
       end
 
       def remove_condition
