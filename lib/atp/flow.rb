@@ -84,7 +84,9 @@ module ATP
     def cz(instance, cz_setup, options = {})
       extract_meta!(options)
       t = apply_open_conditions(options) do |options|
-        builder.cz(cz_setup, test(instance, return: true), options)
+        conditions = options.delete(:conditions)
+        options[:return] = true
+        builder.cz(cz_setup, test(instance, options), conditions: conditions)
       end
       append(t)
     end
