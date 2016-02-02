@@ -4,7 +4,7 @@ module ATP
     class Node < ::AST::Node
       include Factories
 
-      attr_reader :file, :line_number
+      attr_reader :file, :line_number, :description
 
       def initialize(type, children = [], properties = {})
         # Always use strings instead of symbols in the AST, makes serializing
@@ -60,21 +60,12 @@ module ATP
 
       # Returns the first child node of the given type that is found
       def find(type)
-        nodes = find_all(type)
-        nodes.first
+        children.find { |c| c.try(:type) == type }
       end
 
       # Returns an array containing all child nodes of the given type(s)
       def find_all(*types)
-        Extractor.new.process(self, types)
-      end
-
-      def to_h
-        h = {}
-        children.each do |node|
-          h[node.type] = node.children.map { |n| n.is_a?(AST::Node) ? n.to_h : n }
-        end
-        h
+        children.select { |c| types.include?(c.try(:type)) }
       end
     end
   end

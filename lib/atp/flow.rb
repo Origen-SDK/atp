@@ -9,8 +9,17 @@ module ATP
     def initialize(program, name = nil)
       @program = program
       @name = name
-      @builder = AST::Builder.new
       @raw = builder.flow
+    end
+
+    # @api private
+    def marshal_dump
+      [@name, @program, Processors::Marshal.new.process(@raw)]
+    end
+
+    # @api private
+    def marshal_load(array)
+      @name, @program, @raw = array
     end
 
     # Returns a processed/optimized AST, this is the one that should be
@@ -141,6 +150,10 @@ module ATP
 
     private
 
+    def builder
+      @builder ||= AST::Builder.new
+    end
+
     def apply_open_conditions(options)
       if options[:context] == :current
         options[:conditions] = builder.context[:conditions]
@@ -179,10 +192,6 @@ module ATP
       else
         open_groups.last << node
       end
-    end
-
-    def builder
-      @builder
     end
   end
 end

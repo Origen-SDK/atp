@@ -238,7 +238,7 @@ describe 'AST optimization' do
     flow(ast).ast.should == optimized
   end
 
-  it "test 2" do
+  it "test 3" do
     ast = 
       s(:flow,
         s(:test,

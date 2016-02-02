@@ -28,6 +28,8 @@ module ATP
     autoload :Relationship, 'atp/processors/relationship'
     autoload :PreCleaner, 'atp/processors/pre_cleaner'
     autoload :PostCleaner, 'atp/processors/post_cleaner'
+    autoload :Marshal, 'atp/processors/marshal'
+    autoload :AddIDs, 'atp/processors/add_ids'
   end
 
   # Summarizers extract summary data from the given AST
