@@ -31,6 +31,8 @@ module ATP
       ast = Processors::Condition.new.process(ast)
       ast = Processors::Relationship.new.process(ast)
       ast = Processors::PostCleaner.new.process(ast)
+      Validators::Jobs.new(self).process(ast)
+      ast
     end
 
     # Group all tests generated within the given block
