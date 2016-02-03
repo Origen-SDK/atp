@@ -1,6 +1,11 @@
 require 'spec_helper'
 
 describe 'The flow builder API' do
+  
+  def new_flow
+    ATP::Program.new.flow(:sort1) 
+  end
+
   it 'is alive' do
     prog = ATP::Program.new
     flow = prog.flow(:sort1)
@@ -116,5 +121,37 @@ describe 'The flow builder API' do
                 s(:object, "test4")),
               s(:test,
                 s(:object, "test5"))))))
+  end
+
+  describe "tests of individual APIs" do
+    it "flow.test" do
+      f = new_flow
+      f.test("test1")
+      f.ast.should ==
+        s(:flow,
+          s(:test,
+            s(:object, "test1")))
+
+    end
+
+    it "flow.test with bin numbers" do
+      f = new_flow
+      f.test("test1", bin: 1, softbin: 10, continue: true)
+      f.ast.should ==
+        s(:flow,
+          s(:test,
+            s(:object, "test1"),
+            s(:on_fail,
+              s(:set_result, "fail",
+                s(:bin, 1),
+                s(:softbin, 10)),
+              s(:continue))))
+    end
+
+    it "flow.test with job conditions" do
+
+    end
+
+
   end
 end

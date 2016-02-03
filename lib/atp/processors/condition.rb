@@ -77,6 +77,7 @@ module ATP
       alias_method :on_flow_flag, :on_boolean_condition
       alias_method :on_test_result, :on_boolean_condition
       alias_method :on_test_executed, :on_boolean_condition
+      alias_method :on_job, :on_boolean_condition
 
       def on_condition(node)
         children = node.children.dup
@@ -91,7 +92,6 @@ module ATP
         end
       end
       alias_method :on_group, :on_condition
-      alias_method :on_job, :on_condition
 
       # Returns true if the given node contains the given condition within
       # its immediate children
@@ -109,7 +109,7 @@ module ATP
 
       def equal_conditions?(node1, node2)
         if node1.type == node2.type
-          if node1.type == :group || node1.type == :job
+          if node1.type == :group
             node1.to_a.take(1) == node2.to_a.take(1)
           else
             node1.to_a.take(2) == node2.to_a.take(2)

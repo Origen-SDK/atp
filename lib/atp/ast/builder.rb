@@ -47,6 +47,10 @@ module ATP
         n(:test_executed, id, executed, node)
       end
 
+      def job(id, enabled, node)
+        n(:job, id, enabled, node)
+      end
+
       def enable_flow_flag(var, options = {})
         test = n(:enable_flow_flag, var)
         if options[:conditions]
@@ -93,7 +97,7 @@ module ATP
       end
 
       def new_context
-        @context = { conditions: {} }
+        @context = { conditions: [] }
         yield if block_given?
         @context
       end
@@ -115,8 +119,20 @@ module ATP
 
       def apply_conditions(node, conditions)
         conditions.each do |key, value|
+          # Sometimes conditions can be an array (in the case of the current context
+          # being re-used), so rectify that now
+          if key.is_a?(Hash)
+            fail 'Something has gone wrong applying the test conditions' if key.size > 1
+            key, value = key.first[0], key.first[1]
+          end
           key = key.to_s.downcase.to_sym
-          context[:conditions][key] = value
+          # Represent all condition values as lower cased strings internally
+          if value.is_a?(Array)
+            value = value.map { |v| v.to_s.downcase }
+          else
+            value = value.to_s.downcase
+          end
+          context[:conditions] << { key => value }
           case key
           when :if_enabled, :enabled, :enable_flag, :enable, :if_enable
             node = flow_flag(value, true, node)
@@ -149,34 +165,14 @@ module ATP
           when :unless_ran, :unless_executed
             node = test_executed(value, false, node)
           when :job, :jobs, :if_job, :if_jobs
-            # Make sure these are wrapped by an OR, AND jobs doesn't make sense anyway
-            unless value.is_a?(OR)
-              value = ATP.or(value)
-            end
-            node = n(:job, apply_boolean(value), node)
+            node = job(value, true, node)
           when :unless_job, :unless_jobs
-            # Make sure these are wrapped by an OR, AND jobs doesn't make sense anyway
-            unless value.is_a?(OR)
-              value = ATP.or(value)
-            end
-            node = n(:job, apply_boolean(ATP.not(value)), node)
+            node = job(value, false, node)
           else
             fail "Unknown test condition attribute - #{key} (#{value})"
           end
         end
         node
-      end
-
-      def apply_boolean(value)
-        if value.is_a?(OR)
-          n(:or, *value.map { |v| apply_boolean(v) })
-        elsif value.is_a?(AND)
-          n(:and, *value.map { |v| apply_boolean(v) })
-        elsif value.is_a?(NOT)
-          n(:not, apply_boolean(value.value))
-        else
-          value
-        end
       end
 
       def test(object, options = {})

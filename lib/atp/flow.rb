@@ -148,7 +148,92 @@ module ATP
       nil
     end
 
+    # Returns true if the test context generated from the supplied options + existing condition
+    # wrappers, is different from that which was applied to the previous test.
+    def context_changed?(options)
+      a = context[:conditions]
+      b = build_context(options)[:conditions]
+      !conditions_equal?(a, b)
+    end
+
+    def context
+      builder.context
+    end
+
     private
+
+    def conditions_equal?(a, b)
+      if a.size == b.size
+        a = clean_condition(a)
+        b = clean_condition(b)
+        if a.keys.sort == b.keys.sort
+          a.all? do |key, value|
+            value.flatten.uniq.sort == b[key].flatten.uniq.sort
+          end
+        end
+      end
+    end
+
+    def clean_condition(h)
+      c = {}
+      h.each do |hash|
+        key, value = hash.first[0], hash.first[1]
+        key = clean_key(key)
+        value = clean_value(value)
+        c[key] ||= []
+        c[key] << value unless c[key].include?(value)
+      end
+      c
+    end
+
+    def clean_value(value)
+      if value.is_a?(Array)
+        value.map { |v| v.to_s.downcase }.sort
+      else
+        value.to_s.downcase
+      end
+    end
+
+    def clean_key(key)
+      case key.to_sym
+      when :if_enabled, :enabled, :enable_flag, :enable, :if_enable
+        :if_enable
+      when :unless_enabled, :not_enabled, :disabled, :disable, :unless_enable
+        :unless_enable
+      when :if_failed, :unless_passed, :failed
+        :if_failed
+      when :if_passed, :unless_failed, :passed
+        :if_passed
+      when :if_any_failed, :unless_all_passed
+        :if_any_failed
+      when :if_all_failed, :unless_any_passed
+        :if_all_failed
+      when :if_any_passed, :unless_all_failed
+        :if_any_passed
+      when :if_all_passed, :unless_any_failed
+        :if_all_passed
+      when :if_ran, :if_executed
+        :if_ran
+      when :unless_ran, :unless_executed
+        :unless_ran
+      when :job, :jobs, :if_job, :if_jobs
+        :if_job
+      when :unless_job, :unless_jobs
+        :unless_job
+      else
+        fail "Unknown test condition attribute - #{key}"
+      end
+    end
+
+    def build_context(options)
+      c = open_conditions.dup
+      if options[:conditions]
+        options[:conditions].each do |key, value|
+          c << { key => value }
+        end
+      end
+      { conditions: c }
+    end
 
     def builder
       @builder ||= AST::Builder.new

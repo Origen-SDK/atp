@@ -358,11 +358,11 @@ describe 'AST optimization' do
   it "embedded common rules test" do
     ast = to_ast <<-END
       (flow
-        (job "j1"
+        (job "j1" true
           (flow_flag "bitmap" true
             (test
               (object "test1"))))
-        (job "j2"
+        (job "j2" true
           (flow_flag "bitmap" true
             (test
               (object "test1")))))
@@ -371,10 +371,10 @@ describe 'AST optimization' do
     optimized = to_ast <<-END
       (flow
         (flow_flag "bitmap" true
-          (job "j1"
+          (job "j1" true
             (test
               (object "test1")))
-          (job "j2"
+          (job "j2" true
             (test
               (object "test1")))))
     END

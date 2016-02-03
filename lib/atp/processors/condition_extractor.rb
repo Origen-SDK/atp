@@ -21,6 +21,7 @@ module ATP
       alias_method :on_flow_flag, :on_boolean_condition
       alias_method :on_test_result, :on_boolean_condition
       alias_method :on_test_executed, :on_boolean_condition
+      alias_method :on_job, :on_boolean_condition
 
       def on_condition(node)
         children = node.children.dup
@@ -29,7 +30,6 @@ module ATP
         process_all(children)
         conditions.pop
       end
-      alias_method :on_job, :on_condition
 
       def on_test(node)
         results << [conditions.uniq, node]

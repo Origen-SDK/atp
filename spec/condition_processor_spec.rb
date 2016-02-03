@@ -140,14 +140,14 @@ describe 'The Condition Processor' do
   it "optimizes jobs" do
     ast =
       s(:flow,
-        s(:job, "p1",
+        s(:job, "p1", true,
           s(:test,
             s(:object, "test1")),
           s(:flow_flag, "bitmap", true,
             s(:test,
               s(:object, "test2")))),
         s(:flow_flag, "bitmap", true,
-          s(:job, "p1",
+          s(:job, "p1", true,
             s(:flow_flag, "x", true,
               s(:test,
                 s(:object, "test3"))),
@@ -160,7 +160,7 @@ describe 'The Condition Processor' do
     #puts p.process(ast).inspect
     p.process(ast).should ==
       s(:flow,
-        s(:job, "p1",
+        s(:job, "p1", true,
           s(:test,
             s(:object, "test1")),
           s(:flow_flag, "bitmap", true,
@@ -175,110 +175,91 @@ describe 'The Condition Processor' do
   end
 
   it "job optimization test 2" do
-    ast = to_ast <<-END
-      (flow
-        (job
-          (or "p1" "p2")
-          (test
-            (object "p1_or_p2_only_test_1")))
-        (test
-          (object "not_p1_test"))
-        (job
-          (or "p1" "p2")
-          (test
-            (object "p1_or_p2_only_test_2")))
-        (test
-          (object "not_p1_or_p2_test"))
-        (job
-          (or "p1" "p2")
-          (test
-            (object "p1_or_p2_only_test_3")))
-        (test
-          (object "another_not_p1_or_p2_test"))
-        (job
-          (or "p1" "p2")
-          (test
-            (object "p1_or_p2_only_test_4"))))
-          END
+    ast =
+      s(:flow,
+        s(:job, ["p1", "p2"], true,
+          s(:test,
+            s(:object, "test_1"))),
+        s(:test,
+          s(:object, "test2")),
+        s(:job, ["p1", "p2"], true,
+          s(:test,
+            s(:object, "test3"))),
+        s(:test,
+          s(:object, "test4")),
+        s(:job, ["p1", "p2"], true,
+          s(:test,
+            s(:object, "test5"))),
+        s(:test,
+          s(:object, "test6")),
+        s(:job, ["p1", "p2"], true,
+          s(:test,
+            s(:object, "test7"))))
 
     p = ATP::Processors::Condition.new
     #puts p.process(ast).inspect
-    ast2 = to_ast <<-END
-      (flow
-        (job
-          (or "p1" "p2")
-          (test
-            (object "p1_or_p2_only_test_1")))
-        (test
-          (object "not_p1_test"))
-        (job
-          (or "p1" "p2")
-          (test
-            (object "p1_or_p2_only_test_2")))
-        (test
-          (object "not_p1_or_p2_test"))
-        (job
-          (or "p1" "p2")
-          (test
-            (object "p1_or_p2_only_test_3")))
-        (test
-          (object "another_not_p1_or_p2_test"))
-        (job
-          (or "p1" "p2")
-          (test
-            (object "p1_or_p2_only_test_4"))))
-    END
+    ast2 =
+      s(:flow,
+        s(:job, ["p1", "p2"], true,
+          s(:test,
+            s(:object, "test_1"))),
+        s(:test,
+          s(:object, "test2")),
+        s(:job, ["p1", "p2"], true,
+          s(:test,
+            s(:object, "test3"))),
+        s(:test,
+          s(:object, "test4")),
+        s(:job, ["p1", "p2"], true,
+          s(:test,
+            s(:object, "test5"))),
+        s(:test,
+          s(:object, "test6")),
+        s(:job, ["p1", "p2"], true,
+          s(:test,
+            s(:object, "test7"))))
     p.process(ast).should == ast2
   end
 
   it "job optimization test 3" do
-    ast = to_ast <<-END
-      (flow
-        (job
-          (or "p1" "p2")
-          (test
-            (object "p1_or_p2_only_test_1")))
-        (test
-          (object "not_p1_test"))
-        (job
-          (or "p1" "p2")
-          (test
-            (object "p1_or_p2_only_test_2")))
-        (job
-          (or "p1" "p2")
-          (test
-            (object "p1_or_p2_only_test_3")))
-        (test
-          (object "another_not_p1_or_p2_test"))
-        (job
-          (or "p1" "p2")
-          (test
-            (object "p1_or_p2_only_test_4"))))
-          END
+    ast =
+      s(:flow,
+        s(:job, ["p1", "p2"], true,
+          s(:test,
+            s(:object, "test_1"))),
+        s(:test,
+          s(:object, "test2")),
+        s(:job, ["p1", "p2"], true,
+          s(:test,
+            s(:object, "test3"))),
+        s(:job, ["p1", "p2"], true,
+          s(:test,
+            s(:object, "test4"))),
+        s(:test,
+          s(:object, "test5")),
+        s(:job, ["p1", "p2"], true,
+          s(:test,
+            s(:object, "test6"))))
 
     p = ATP::Processors::Condition.new
     #puts p.process(ast).inspect
-    ast2 = to_ast <<-END
-      (flow
-        (job
-          (or "p1" "p2")
-          (test
-            (object "p1_or_p2_only_test_1")))
-        (test
-          (object "not_p1_test"))
-        (job
-          (or "p1" "p2")
-          (test
-            (object "p1_or_p2_only_test_2"))
-          (test
-            (object "p1_or_p2_only_test_3")))
-        (test
-          (object "another_not_p1_or_p2_test"))
-        (job
-          (or "p1" "p2")
-          (test
-            (object "p1_or_p2_only_test_4"))))
-    END
+    ast2 =
+      s(:flow,
+        s(:job, ["p1", "p2"], true,
+          s(:test,
+            s(:object, "test_1"))),
+        s(:test,
+          s(:object, "test2")),
+        s(:job, ["p1", "p2"], true,
+          s(:test,
+            s(:object, "test3")),
+          s(:test,
+            s(:object, "test4"))),
+        s(:test,
+          s(:object, "test5")),
+        s(:job, ["p1", "p2"], true,
+          s(:test,
+            s(:object, "test6"))))
     p.process(ast).should == ast2
   end
 

@@ -19,16 +19,18 @@ module ATP
 
     def on_flow_flag(node)
       flag, enabled, *nodes = *node
-      if (enabled && flow_flags.include?(flag)) ||
-         (!enabled && !flow_flags.include?(flag))
+      flag = [flag].flatten
+      active = flag.any? { |f| flow_flags.include?(f) }
+      if (enabled && active) || (!enabled && !active)
         process_all(nodes)
       end
     end
 
     def on_run_flag(node)
       flag, enabled, *nodes = *node
-      if (enabled && run_flags.include?(flag)) ||
-         (!enabled && !run_flags.include?(flag))
+      flag = [flag].flatten
+      active = flag.any? { |f| run_flags.include?(f) }
+      if (enabled && active) || (!enabled && !active)
         process_all(nodes)
       end
     end
@@ -113,23 +115,20 @@ module ATP
     alias_method :on_render, :on_log
 
     def on_job(node)
-      jobs = clean_job(node.to_a[0])
+      jobs, state, *nodes = *node
+      jobs = clean_job(jobs)
       unless job
         fail 'Flow contains JOB-based conditions and no current JOB has been given!'
       end
-      if jobs.include?(job) || (jobs.any? { |j| j =~ /^!/ } && !jobs.include?("!#{job}"))
-        process_all(node)
+      if state
+        process_all(node) if jobs.include?(job)
+      else
+        process_all(node) unless jobs.include?(job)
       end
     end
 
     def clean_job(job)
-      if job.try(:type) == :or
-        job.to_a.map { |j| clean_job(j) }.flatten
-      elsif job.try(:type) == :not
-        clean_job(job.to_a[0]).map { |j| "!#{j}" }
-      else
-        [job.upcase]
-      end
+      [job].flatten.map { |j| j.to_s.upcase }
     end
 
     def job

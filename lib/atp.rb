@@ -9,9 +9,6 @@ module ATP
   autoload :Runner, 'atp/runner'
   autoload :Formatter, 'atp/formatter'
   autoload :Parser, 'atp/parser'
-  autoload :AND, 'atp/and'
-  autoload :OR, 'atp/or'
-  autoload :NOT, 'atp/not'
 
   module AST
     autoload :Node, 'atp/ast/node'
@@ -42,6 +39,7 @@ module ATP
     autoload :DuplicateIDs, 'atp/validators/duplicate_ids'
     autoload :MissingIDs, 'atp/validators/missing_ids'
     autoload :Condition, 'atp/validators/condition'
+    autoload :Jobs, 'atp/validators/jobs'
   end
 
   # Formatters are run on the processed AST to display the flow or to render

@@ -87,27 +87,26 @@ test3
   end
 
   it "can enable a job" do
-    ast = to_ast <<-END
-      (flow
-        (test
-          (name "test1")
-          (id "t1"))
-        (job "j1"
-          (test
-            (name "test2")))
-        (job "j2"
-          (test
-            (name "test3")))
-        (job (not "j2")
-          (test
-            (name "test4")))
-        (job (or "j1" "j2")
-          (test
-            (name "test5")))
-        (job (not (or "j1" "j2"))
-          (test
-            (name "test6"))))
-    END
+    ast =
+      s(:flow,
+        s(:test,
+          s(:name, "test1"),
+          s(:id, "t1")),
+        s(:job, "j1", true,
+          s(:test,
+            s(:name, "test2"))),
+        s(:job, "j2", true,
+          s(:test,
+            s(:name, "test3"))),
+        s(:job, "j2", false,
+          s(:test,
+            s(:name, "test4"))),
+        s(:job, ["j1", "j2"], true,
+          s(:test,
+            s(:name, "test5"))),
+        s(:job, ["j1", "j2"], false,
+          s(:test,
+            s(:name, "test6"))))
 
     ATP::Formatters::Basic.run(ast, job: "j1").should == <<-END
 test1
