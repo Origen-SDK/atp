@@ -27,6 +27,7 @@ module ATP
     autoload :PostCleaner, 'atp/processors/post_cleaner'
     autoload :Marshal, 'atp/processors/marshal'
     autoload :AddIDs, 'atp/processors/add_ids'
+    autoload :FlowID, 'atp/processors/flow_id'
   end
 
   # Summarizers extract summary data from the given AST

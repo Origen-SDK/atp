@@ -4,7 +4,7 @@ module ATP
       include Factories
 
       attr_reader :context
-      attr_accessor :source_file, :source_line_number
+      attr_accessor :source_file, :source_line_number, :description
 
       def flow
         n0(:flow)
@@ -25,10 +25,6 @@ module ATP
 
       def render(str)
         n(:render, str.to_s)
-      end
-
-      def description(str)
-        n(:description, str.to_s)
       end
 
       def id(symbol)
@@ -184,8 +180,6 @@ module ATP
         if n = (options[:number] || options[:num] || options[:tnum] || options[:test_number])
           children << number(n)
         end
-        d = options[:description] || options[:desc]
-        children << description(d) if d
         children << id(options[:id].to_s.downcase.to_sym) if options[:id]
 
         children << on_fail(options[:on_fail]) if options[:on_fail]
@@ -203,7 +197,7 @@ module ATP
       def on_fail(options = {})
         children = []
         if options[:bin] || options[:softbin]
-          children << set_result(:fail, bin: options[:bin], softbin: options[:softbin], description: options[:bin_description])
+          children << set_result(:fail, bin: options[:bin], softbin: options[:softbin], bin_description: options[:bin_description])
         end
         children << continue if options[:continue]
         n(:on_fail, *children)
@@ -212,7 +206,7 @@ module ATP
       def on_pass(options = {})
         children = []
         if options[:bin] || options[:softbin]
-          children << set_result(:pass, bin: options[:bin], softbin: options[:softbin], description: options[:bin_description])
+          children << set_result(:pass, bin: options[:bin], softbin: options[:softbin], bin_description: options[:bin_description])
         end
         children << continue if options[:continue]
         n(:on_pass, *children)
@@ -223,7 +217,7 @@ module ATP
         children << type
         children << n(:bin, options[:bin])  if options[:bin]
         children << n(:softbin, options[:softbin])  if options[:softbin]
-        children << n(:description, options[:description])  if options[:description]
+        children << n(:bin_description, options[:bin_description])  if options[:bin_description]
         result = n(:set_result, *children)
 
         if options[:conditions]

@@ -5,6 +5,7 @@ module ATP
     attr_reader :program, :name
     # Returns the raw AST
     attr_reader :raw
+    attr_accessor :id
 
     def initialize(program, name = nil)
       @program = program
@@ -26,6 +27,9 @@ module ATP
     # used to build and represent the given test flow
     def ast
       ast = Processors::PreCleaner.new.process(raw)
+      # File.open("a1.txt", "w") { |f| f.write(ast) }
+      ast = Processors::FlowID.new.run(ast, id) if id
+      # File.open("a2.txt", "w") { |f| f.write(ast) }
       Validators::DuplicateIDs.new(self).process(ast)
       Validators::MissingIDs.new(self).process(ast)
       ast = Processors::Condition.new.process(ast)
@@ -258,6 +262,7 @@ module ATP
     def extract_meta!(options)
       builder.source_file = options.delete(:source_file) if options[:source_file]
       builder.source_line_number = options.delete(:source_line_number) if options[:source_line_number]
+      builder.description = options.delete(:description) if options[:description]
     end
 
     # For testing
