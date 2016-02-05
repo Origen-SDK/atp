@@ -1,3 +1,18 @@
+<a class="anchor release_tag" name="v0_3_1"></a>
+<h1><a href="#v0_3_1">Tag: v0.3.1</a></h1>
+
+##### Branch: 'master'
+
+##### by Stephen McGinty on 05-Feb-2016 08:09AM
+
+
+If an ID is assigned to a flow object (prog.flow(:probe1).id = "some\_id"), then it will
+now be appended to any generated flags and labels to ensure uniqueness. Any user-specified
+enable words and so on will not be modified.
+
+Moved the description attached to test nodes to their metadata, rather than being part of
+the AST, should have been this way from the start.
+
 <a class="anchor release_tag" name="v0_3_0"></a>
 <h1><a href="#v0_3_0">Tag: v0.3.0</a></h1>
 
