@@ -10,15 +10,27 @@ module ATP
       end
 
       def on_id(node)
-        node.updated(nil, ["#{node.value}_#{id}"])
+        if node.value =~ /^extern/
+          node
+        else
+          node.updated(nil, ["#{node.value}_#{id}"])
+        end
       end
 
       def on_test_result(node)
         tid, state, nodes = *node
         if tid.is_a?(Array)
-          tid = tid.map { |tid| "#{tid}_#{id}" }
+          tid = tid.map do |tid|
+            if tid =~ /^extern/
+              tid
+            else
+              "#{tid}_#{id}"
+            end
+          end
         else
-          tid = "#{tid}_#{id}"
+          if tid !~ /^extern/
+            tid = "#{tid}_#{id}"
+          end
         end
         node.updated(nil, [tid, state] + [process(nodes)])
       end

@@ -157,21 +157,19 @@ module ATP
     # Returns true if the test context generated from the supplied options + existing condition
     # wrappers, is different from that which was applied to the previous test.
     def context_changed?(options)
-      a = context[:conditions]
-      b = build_context(options)[:conditions]
-      !conditions_equal?(a, b)
+      a = context
+      b = build_context(options)
+      !context_equal?(a, b)
     end
 
     def context
       builder.context
     end
 
-    private
-
-    def conditions_equal?(a, b)
+    def context_equal?(a, b)
       if a.size == b.size
-        a = clean_condition(a)
-        b = clean_condition(b)
+        a = clean_condition(a[:conditions])
+        b = clean_condition(b[:conditions])
         if a.keys.sort == b.keys.sort
           a.all? do |key, value|
             value.flatten.uniq.sort == b[key].flatten.uniq.sort
@@ -179,6 +177,8 @@ module ATP
         end
       end
     end
+
+    private
 
     def clean_condition(h)
       c = {}

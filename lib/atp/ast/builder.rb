@@ -6,6 +6,10 @@ module ATP
       attr_reader :context
       attr_accessor :source_file, :source_line_number, :description
 
+      def initialize
+        @context = { conditions: [] }
+      end
+
       def flow
         n0(:flow)
       end

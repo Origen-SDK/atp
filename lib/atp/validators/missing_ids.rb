@@ -40,11 +40,13 @@ module ATP
       def on_test_executed(node)
         ids = node.to_a[0]
         [ids].flatten.each do |id|
-          @referenced_ids[id] ||= []
-          @referenced_ids[id] << node
-          unless @present_ids[id]
-            @referenced_early[id] ||= []
-            @referenced_early[id] << node
+          unless id =~ /^extern/
+            @referenced_ids[id] ||= []
+            @referenced_ids[id] << node
+            unless @present_ids[id]
+              @referenced_early[id] ||= []
+              @referenced_early[id] << node
+            end
           end
         end
         process_all(node)
