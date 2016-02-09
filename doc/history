@@ -1,3 +1,19 @@
+<a class="anchor release_tag" name="v0_3_2"></a>
+<h1><a href="#v0_3_2">Tag: v0.3.2</a></h1>
+
+##### Branch: 'master'
+
+##### by Stephen McGinty on 09-Feb-2016 05:28AM
+
+
+Added support for references to test IDs outside of a given flow.
+
+Such IDs must be named starting with extern\_ to indicate to ATP that it is a reference to a
+test that is external to the current flow.
+
+In that case ATP will not modulate the ID (i.e. will not append a flow signature) and will not
+include it in the unknown ID validation.
+
 <a class="anchor release_tag" name="v0_3_1"></a>
 <h1><a href="#v0_3_1">Tag: v0.3.1</a></h1>
 
