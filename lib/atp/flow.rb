@@ -79,6 +79,14 @@ module ATP
           options[:on_fail] ||= {}
           options[:on_fail][:continue] = true
         end
+        if f = options.delete(:flag_pass)
+          options[:on_pass] ||= {}
+          options[:on_pass][:set_run_flag] = f
+        end
+        if f = options.delete(:flag_fail)
+          options[:on_fail] ||= {}
+          options[:on_fail][:set_run_flag] = f
+        end
         builder.test(instance, options)
       end
       append(t) unless r

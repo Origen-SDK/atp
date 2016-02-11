@@ -51,6 +51,10 @@ module ATP
         n(:job, id, enabled, node)
       end
 
+      def set_run_flag(flag)
+        n(:set_run_flag, flag)
+      end
+
       def enable_flow_flag(var, options = {})
         test = n(:enable_flow_flag, var)
         if options[:conditions]
@@ -203,6 +207,9 @@ module ATP
         if options[:bin] || options[:softbin]
           children << set_result(:fail, bin: options[:bin], softbin: options[:softbin], bin_description: options[:bin_description])
         end
+        if options[:set_run_flag] || options[:set_flag]
+          children << set_run_flag(options[:set_run_flag] || options[:set_flag])
+        end
         children << continue if options[:continue]
         n(:on_fail, *children)
       end
@@ -211,6 +218,9 @@ module ATP
         children = []
         if options[:bin] || options[:softbin]
           children << set_result(:pass, bin: options[:bin], softbin: options[:softbin], bin_description: options[:bin_description])
+        end
+        if options[:set_run_flag] || options[:set_flag]
+          children << set_run_flag(options[:set_run_flag] || options[:set_flag])
         end
         children << continue if options[:continue]
         n(:on_pass, *children)
