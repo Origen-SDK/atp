@@ -1,3 +1,23 @@
+<a class="anchor release_tag" name="v0_3_3"></a>
+<h1><a href="#v0_3_3">Tag: v0.3.3</a></h1>
+
+##### Branch: 'master'
+
+##### by Stephen McGinty on 11-Feb-2016 13:15PM
+
+
+Added ability to explicitly set pass and fail flags when defining a test:
+
+~~~ruby
+flow.test "test\_x", on\_pass: { set\_run\_flag: "test\_x\_passed" }
+flow.test "test\_y", on\_fail: { set\_run\_flag: "test\_x\_failed" }
+
+# A short hand is available for this:
+
+flow.test "test\_x", flag\_pass: "test\_x\_passed"
+flow.test "test\_y", flag\_fail: "test\_x\_failed"
+~~~
+
 <a class="anchor release_tag" name="v0_3_2"></a>
 <h1><a href="#v0_3_2">Tag: v0.3.2</a></h1>
 
