@@ -27,6 +27,7 @@ module ATP
     autoload :PostCleaner, 'atp/processors/post_cleaner'
     autoload :Marshal, 'atp/processors/marshal'
     autoload :AddIDs, 'atp/processors/add_ids'
+    autoload :AddSetResult, 'atp/processors/add_set_result'
     autoload :FlowID, 'atp/processors/flow_id'
   end
 

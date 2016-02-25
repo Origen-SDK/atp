@@ -21,8 +21,13 @@ module ATP
         else
           str += 'PASS'.ljust(9)
         end
-        str += "#{node.find(:name).value}".ljust(55)
-        str += "#{node.find(:object).value}".ljust(55)
+        if n = node.find(:name)
+          name = n.value
+        else
+          name = node.find(:object).value['Test']
+        end
+        str += "#{name}".ljust(55)
+        str += "#{node.find(:object).value['Test']}".ljust(55)
         str += "#{node.find(:id).value}"
         puts str
       end

@@ -5,6 +5,7 @@ describe 'AST Nodes' do
   it "can be exported to a string and back again" do
     node = 
       s(:flow,
+        s(:name, "sort1"),
         s(:test,
           s(:name, "test1"),
           s(:id, :t1)),
@@ -19,6 +20,7 @@ describe 'AST Nodes' do
 
     ast = to_ast <<-END
       (flow
+        (name "sort1")
         (test
           (name "test1")
           (id "t1"))

@@ -9,6 +9,7 @@ describe 'The Condition Processor' do
     flow.test :test3, conditions: { if_enabled: "bitmap", if_failed: :t1 }
     flow.raw.should ==
       s(:flow,
+        s(:name, "sort1"),
         s(:test,
           s(:object, "test1"),
           s(:id, :t1)),
@@ -23,6 +24,7 @@ describe 'The Condition Processor' do
     #puts p.process(flow.raw).inspect
     p.process(flow.raw).should ==
       s(:flow,
+        s(:name, "sort1"),
         s(:test,
           s(:object, "test1"),
           s(:id, :t1)),
@@ -37,6 +39,7 @@ describe 'The Condition Processor' do
   it "wraps nested conditions" do
     ast =
       s(:flow,
+        s(:name, "sort1"),
         s(:test,
           s(:object, "test1")),
         s(:flow_flag, "bitmap", true,
@@ -54,6 +57,7 @@ describe 'The Condition Processor' do
     #puts p.process(ast).inspect
     p.process(ast).should ==
       s(:flow,
+        s(:name, "sort1"),
         s(:test,
           s(:object, "test1")),
         s(:flow_flag, "bitmap", true,
@@ -70,32 +74,42 @@ describe 'The Condition Processor' do
   it "optimizes groups too" do
     ast =
       s(:flow,
+        s(:name, "sort1"),
         s(:test,
           s(:object, "test1")),
-        s(:group, "g1",
+        s(:group,
+          s(:name, "g1"),
           s(:test,
             s(:object, "test2"))),
-        s(:group, "g1",
-          s(:group, "g2",
+        s(:group,
+          s(:name, "g1"),
+          s(:group,
+            s(:name, "g2"),
             s(:test,
               s(:object, "test3"))),
-          s(:group, "g2",
-            s(:group, "g3",
+          s(:group,
+            s(:name, "g2"),
+            s(:group,
+              s(:name, "g3"),
               s(:test,
                 s(:object, "test4"))))))
     p = ATP::Processors::Condition.new
     #puts p.process(ast).inspect
     p.process(ast).should ==
       s(:flow,
+        s(:name, "sort1"),
         s(:test,
           s(:object, "test1")),
-        s(:group, "g1",
+        s(:group,
+          s(:name, "g1"),
           s(:test,
             s(:object, "test2")),
-          s(:group, "g2",
+          s(:group,
+            s(:name, "g2"),
             s(:test,
               s(:object, "test3")),
-            s(:group, "g3",
+            s(:group,
+              s(:name, "g3"),
               s(:test,
                 s(:object, "test4"))))))
   end
@@ -103,14 +117,17 @@ describe 'The Condition Processor' do
   it "combined condition and group test" do
     ast =
       s(:flow,
-        s(:group, "g1",
+        s(:name, "sort1"),
+        s(:group,
+          s(:name, "g1"),
           s(:test,
             s(:object, "test1")),
           s(:flow_flag, "bitmap", true,
             s(:test,
               s(:object, "test2")))),
         s(:flow_flag, "bitmap", true,
-          s(:group, "g1",
+          s(:group,
+            s(:name, "g1"),
             s(:flow_flag, "x", true,
               s(:test,
                 s(:object, "test3"))),
@@ -123,7 +140,9 @@ describe 'The Condition Processor' do
     #puts p.process(ast).inspect
     p.process(ast).should ==
       s(:flow,
-        s(:group, "g1",
+        s(:name, "sort1"),
+        s(:group,
+          s(:name, "g1"),
           s(:test,
             s(:object, "test1")),
           s(:flow_flag, "bitmap", true,
@@ -140,6 +159,7 @@ describe 'The Condition Processor' do
   it "optimizes jobs" do
     ast =
       s(:flow,
+        s(:name, "sort1"),
         s(:job, "p1", true,
           s(:test,
             s(:object, "test1")),
@@ -160,6 +180,7 @@ describe 'The Condition Processor' do
     #puts p.process(ast).inspect
     p.process(ast).should ==
       s(:flow,
+        s(:name, "sort1"),
         s(:job, "p1", true,
           s(:test,
             s(:object, "test1")),
@@ -177,6 +198,7 @@ describe 'The Condition Processor' do
   it "job optimization test 2" do
     ast =
       s(:flow,
+        s(:name, "sort1"),
         s(:job, ["p1", "p2"], true,
           s(:test,
             s(:object, "test_1"))),
@@ -200,6 +222,7 @@ describe 'The Condition Processor' do
     #puts p.process(ast).inspect
     ast2 =
       s(:flow,
+        s(:name, "sort1"),
         s(:job, ["p1", "p2"], true,
           s(:test,
             s(:object, "test_1"))),
@@ -224,6 +247,7 @@ describe 'The Condition Processor' do
   it "job optimization test 3" do
     ast =
       s(:flow,
+        s(:name, "sort1"),
         s(:job, ["p1", "p2"], true,
           s(:test,
             s(:object, "test_1"))),
@@ -245,6 +269,7 @@ describe 'The Condition Processor' do
     #puts p.process(ast).inspect
     ast2 =
       s(:flow,
+        s(:name, "sort1"),
         s(:job, ["p1", "p2"], true,
           s(:test,
             s(:object, "test_1"))),
@@ -266,6 +291,7 @@ describe 'The Condition Processor' do
   it "test result optimization test" do
     ast = to_ast <<-END
       (flow
+        (name "sort1")
         (test
           (object "test1")
           (id "ifallb1"))
@@ -301,6 +327,7 @@ describe 'The Condition Processor' do
     #puts p.process(ast).inspect
     ast2 = to_ast <<-END
       (flow
+        (name "sort1")
         (test
           (object "test1")
           (id "ifallb1"))
@@ -333,6 +360,7 @@ describe 'The Condition Processor' do
   it "test result optimization test 2" do
     ast = 
       s(:flow,
+        s(:name, "sort1"),
         s(:log, "Test that if_any_failed works"),
         s(:test,
           s(:object, "test1"),
@@ -361,6 +389,7 @@ describe 'The Condition Processor' do
     #puts p.process(ast).inspect
     ast2 =
       s(:flow,
+        s(:name, "sort1"),
         s(:log, "Test that if_any_failed works"),
         s(:test,
           s(:object, "test1"),
@@ -383,6 +412,39 @@ describe 'The Condition Processor' do
             s(:object, "test3")),
           s(:test,
             s(:object, "test4"))))
+
+    p.process(ast).should == ast2
+  end
+
+  it "adjacent group optimization test" do
+    ast = 
+      s(:flow,
+        s(:name, "sort1"),
+        s(:group,
+          s(:name, "additional_erase"),
+          s(:flow_flag, "additional_erase", true,
+            s(:job, ["fr"], true,
+              s(:test,
+                s(:object, "erase_all"))))),
+        s(:group,
+          s(:name, "additional_erase"),
+          s(:job, ["fr"], true,
+            s(:test,
+              s(:object, "erase_all")))))
+
+    p = ATP::Processors::Condition.new
+    #puts p.process(ast).inspect
+    ast2 =
+      s(:flow,
+        s(:name, "sort1"),
+        s(:group,
+          s(:name, "additional_erase"),
+          s(:job, ["fr"], true,
+            s(:flow_flag, "additional_erase", true,
+              s(:test,
+                s(:object, "erase_all"))),
+            s(:test,
+              s(:object, "erase_all")))))
 
     p.process(ast).should == ast2
   end

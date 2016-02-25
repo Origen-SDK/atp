@@ -10,6 +10,7 @@ describe 'The AST validators' do
     validator = ATP::Validators::Jobs.new(self)
 
     ast = s(:flow,
+            s(:name, "sort1"),
             s(:job, "p1", true,
               s(:test,
                 s(:name, "test1"),
@@ -22,6 +23,7 @@ describe 'The AST validators' do
     validator.test_process(ast).should == false  
 
     ast = s(:flow,
+            s(:name, "sort1"),
             s(:job, "p1", true,
               s(:test,
                 s(:name, "test1"),
@@ -37,6 +39,7 @@ describe 'The AST validators' do
   it "job names can't start with a negative symbol" do
     validator = ATP::Validators::Jobs.new(self)
     ast = s(:flow,
+            s(:name, "sort1"),
             s(:job, "!p1", true,
               s(:test,
                 s(:name, "test1"),

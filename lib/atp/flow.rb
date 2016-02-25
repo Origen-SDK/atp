@@ -7,10 +7,12 @@ module ATP
     attr_reader :raw
     attr_accessor :id
 
-    def initialize(program, name = nil)
+    def initialize(program, name = nil, options = {})
+      name, options = nil, name if name.is_a?(Hash)
+      extract_meta!(options)
       @program = program
       @name = name
-      @raw = builder.flow
+      @raw = builder.flow(name)
     end
 
     # @api private
@@ -49,6 +51,7 @@ module ATP
     def group(name, options = {})
       open_groups.push([])
       yield
+      extract_meta!(options)
       append builder.group(name, open_groups.pop, options)
     end
 
@@ -268,9 +271,9 @@ module ATP
     end
 
     def extract_meta!(options)
-      builder.source_file = options.delete(:source_file) if options[:source_file]
-      builder.source_line_number = options.delete(:source_line_number) if options[:source_line_number]
-      builder.description = options.delete(:description) if options[:description]
+      builder.source_file = options.delete(:source_file)
+      builder.source_line_number = options.delete(:source_line_number)
+      builder.description = options.delete(:description)
     end
 
     # For testing

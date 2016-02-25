@@ -7,14 +7,16 @@ module ATP
     # For example this AST:
     #
     #   (flow
-    #     (group "g1"
+    #     (group
+    #       (name "g1")
     #       (test
     #         (name "test1"))
     #       (flow-flag "bitmap" true
     #         (test
     #           (name "test2"))))
     #     (flow-flag "bitmap" true
-    #       (group "g1"
+    #       (group
+    #         (name "g1")
     #         (flow-flag "x" true
     #           (test
     #             (name "test3")))
@@ -26,7 +28,8 @@ module ATP
     # Will be optimized to this:
     #
     #   (flow
-    #     (group "g1"
+    #     (group
+    #       (name "g1")
     #       (test
     #         (name "test1"))
     #       (flow-flag "bitmap" true
@@ -66,7 +69,7 @@ module ATP
         name = children.shift
         state = children.shift
         remove_condition << node
-        children = optimize_siblings(n(:temp, children))
+        children = extract_common_embedded_conditions(n(:temp, children))
         remove_condition.pop
         if condition_to_be_removed?(node)
           process_all(children)
@@ -79,11 +82,11 @@ module ATP
       alias_method :on_test_executed, :on_boolean_condition
       alias_method :on_job, :on_boolean_condition
 
-      def on_condition(node)
+      def on_group(node)
         children = node.children.dup
         name = children.shift
         remove_condition << node
-        children = optimize_siblings(n(:temp, children))
+        children = extract_common_embedded_conditions(n(:temp, children))
         remove_condition.pop
         if condition_to_be_removed?(node)
           process_all(children)
@@ -91,7 +94,6 @@ module ATP
           node.updated(nil, [name] + process_all(children))
         end
       end
-      alias_method :on_group, :on_condition
 
       # Returns true if the given node contains the given condition within
       # its immediate children
@@ -122,58 +124,9 @@ module ATP
       end
 
       def on_flow(node)
-        # The extract_common_embedded_conditions method can probably do the whole job,
-        # but it might get a little complicated with regards to optimizing adjacent groups,
-        # so have left the original logic to have the first crack and deal with the groups
-        # for now.
-        nodes = optimize_siblings(node)
+        name, *nodes = *node
         nodes = extract_common_embedded_conditions(nodes)
-        node.updated(nil, nodes)
-      end
-
-      def on_members(node)
-        node.updated(nil, extract_common_embedded_conditions(optimize_siblings(node)))
-      end
-
-      def optimize_siblings(top_node)
-        children = []
-        unprocessed_children = []
-        current = nil
-        last = top_node.children.size - 1
-        top_node.to_a.each_with_index do |node, i|
-          # If a condition has been identified in a previous node
-          if current
-            process_nodes = false
-            # If this node has the current condition, then buffer it for later processing
-            # and continue to the next node
-            if has_condition?(current, node)
-              unprocessed_children << node
-              node = nil
-            else
-              process_nodes = true
-            end
-            if process_nodes || i == last
-              remove_condition << current
-              current_children = current.children + [process_all(unprocessed_children)].flatten
-              unprocessed_children = []
-              remove_condition.pop
-              children << process(current.updated(nil, current_children))
-              if node && (!condition?(node) || i == last)
-                current = nil
-                children << process(node)
-              else
-                current = node
-              end
-            end
-          else
-            if condition?(node) && i != last
-              current = node
-            else
-              children << process(node)
-            end
-          end
-        end
-        children.flatten
+        node.updated(nil, [name] + nodes)
       end
 
       def extract_common_embedded_conditions(nodes)

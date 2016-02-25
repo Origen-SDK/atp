@@ -10,8 +10,8 @@ module ATP
       p
     end
 
-    def flow(name)
-      flows[name] ||= Flow.new(self, name)
+    def flow(name, options = {})
+      flows[name] ||= Flow.new(self, name, options)
     end
 
     def flows

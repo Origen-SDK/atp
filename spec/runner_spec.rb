@@ -5,6 +5,7 @@ describe 'The Runner' do
   it "is alive" do
     ast = to_ast <<-END
       (flow
+        (name "sort1")
         (test
           (name "test1")
           (id "t1"))
@@ -24,6 +25,7 @@ test1
   it "can enable flow flags" do
     ast = to_ast <<-END
       (flow
+        (name "sort1")
         (test
           (name "test1")
           (id "t1"))
@@ -45,12 +47,17 @@ test2
   it "can assume test failures" do
     ast = to_ast <<-END
       (flow
+        (name "sort1")
         (test
           (name "test1")
-          (id "t1"))
+          (id "t1")
+          (on-fail
+            (continue)))
         (test
           (name "test1")
-          (id "t2"))
+          (id "t2")
+          (on-fail
+            (continue)))
         (flow-flag "bitmap" true
           (test
             (name "test2"))
@@ -89,6 +96,7 @@ test3
   it "can enable a job" do
     ast =
       s(:flow,
+        s(:name, "sort1"),
         s(:test,
           s(:name, "test1"),
           s(:id, "t1")),
@@ -131,6 +139,7 @@ test6
 #  it "can handle test failures" do
 #    ast = to_ast <<-END
 #      (flow
+#        (name "sort1")
 #        (test
 #          (name "test1")
 #          (id "t1"))

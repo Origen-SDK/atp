@@ -29,11 +29,16 @@ module ATP
 
       # Adds an empty node of the given type to the children unless another
       # node of the same type is already present
-      def ensure_node_present(type)
+      def ensure_node_present(type, child_nodes = nil)
         if children.any? { |n| n.type == type }
           self
         else
-          updated(nil, children + [n0(type)])
+          if child_nodes
+            node = n(type, *child_nodes)
+          else
+            node = n0(type)
+          end
+          updated(nil, children + [node])
         end
       end
 
@@ -56,6 +61,11 @@ module ATP
       # Add the given nodes to the children
       def add(*nodes)
         updated(nil, children + nodes)
+      end
+
+      # Remove the given nodes from the children
+      def remove(*nodes)
+        updated(nil, children - nodes)
       end
 
       # Returns the first child node of the given type that is found

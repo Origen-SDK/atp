@@ -10,8 +10,8 @@ module ATP
         @context = { conditions: [] }
       end
 
-      def flow
-        n0(:flow)
+      def flow(str)
+        n(:flow, name(str))
       end
 
       def name(str)
@@ -81,7 +81,7 @@ module ATP
         children << on_fail(options[:on_fail]) if options[:on_fail]
         children << on_pass(options[:on_pass]) if options[:on_pass]
 
-        children << n(:members, *nodes)
+        children += nodes
         group = n(:group, *children)
 
         if options[:conditions]

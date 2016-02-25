@@ -5,32 +5,70 @@ module ATP
   # be hit when the flow is executed under the given conditions.
   class Runner < Processor
     def run(node, options = {})
+      options = {
+        evaluate_flow_flags: true,
+        evaluate_run_flags:  true,
+        evaluate_set_result: true
+      }.merge(options)
       @options = options
       @completed = false
       @groups = []
-      process(Processors::AddIDs.new.run(node))
+      @groups_on_fail = []
+      @groups_on_pass = []
+      node = Processors::AddIDs.new.run(node)
+      node = Processors::AddSetResult.new.run(node)
+      process(node)
     end
 
     def on_flow(node)
-      @flow = []
-      process_all(node.children)
-      node.updated(nil, @flow)
+      c = open_container do
+        process_all(node.children)
+      end
+      node.updated(nil, c)
+    end
+
+    def on_name(node)
+      container << node
     end
 
     def on_flow_flag(node)
-      flag, enabled, *nodes = *node
-      flag = [flag].flatten
-      active = flag.any? { |f| flow_flags.include?(f) }
-      if (enabled && active) || (!enabled && !active)
-        process_all(nodes)
+      if @options[:evaluate_flow_flags]
+        flag, enabled, *nodes = *node
+        flag = [flag].flatten
+        active = flag.any? { |f| flow_flags.include?(f) }
+        if (enabled && active) || (!enabled && !active)
+          process_all(nodes)
+        end
+      else
+        c = open_container do
+          process_all(node.children)
+        end
+        container << node.updated(nil, node.children.take(2) + c)
       end
     end
 
     def on_run_flag(node)
-      flag, enabled, *nodes = *node
-      flag = [flag].flatten
-      active = flag.any? { |f| run_flags.include?(f) }
-      if (enabled && active) || (!enabled && !active)
+      if @options[:evaluate_run_flags]
+        flag, enabled, *nodes = *node
+        flag = [flag].flatten
+        active = flag.any? { |f| run_flags.include?(f) }
+        if (enabled && active) || (!enabled && !active)
+          process_all(nodes)
+        end
+      else
+        c = open_container do
+          process_all(node.children)
+        end
+        container << node.updated(nil, node.children.take(2) + c)
+      end
+    end
+
+    # Not sure why this method is here, all test_result nodes should have been
+    # converted to run_flag nodes by now
+    def on_test_result(node)
+      id, passed, *nodes = *node
+      if (passed && !failed_test_ids.include?(id)) ||
+         (!passed && failed_test_ids.include?(id))
         process_all(nodes)
       end
     end
@@ -43,7 +81,19 @@ module ATP
           failed = true
         end
       end
-      @flow << node unless completed?
+      # If there is a group on_fail, then remove any test specific one as that
+      # will be overridden
+      if @groups_on_fail.last
+        if n_on_fail = node.find(:on_fail)
+          node = node.remove(n_on_fail)
+        end
+      end
+      if @groups_on_pass.last
+        if n_on_pass = node.find(:on_pass)
+          node = node.remove(n_on_pass)
+        end
+      end
+      container << node unless completed?
       if failed
         # Give indication to the parent group that at least one test within it failed
         if @groups.last
@@ -51,9 +101,11 @@ module ATP
           @groups << false
         end
         if n = node.find(:on_fail)
-          @continue = !!n.find(:continue)
+          # If it has been set by a parent group, don't clear it
+          orig = @continue
+          @continue ||= !!n.find(:continue)
           process_all(n)
-          @continue = false
+          @continue = orig
         end
       else
         if n = node.find(:on_pass)
@@ -63,37 +115,41 @@ module ATP
     end
 
     def on_group(node)
-      @groups << true  # This will be set to false by any tests that fail within the group
-      process_all(node.find(:members))
-      if !@groups.pop # If failed
-        if n = node.find(:on_fail)
-          @continue = !!n.find(:continue)
-          process_all(n)
-          @continue = false
+      on_fail = node.find(:on_fail)
+      on_pass = node.find(:on_pass)
+      c = open_container do
+        @groups << true  # This will be set to false by any tests that fail within the group
+        @groups_on_fail << on_fail
+        @groups_on_pass << on_pass
+        if on_fail
+          orig = @continue
+          @continue = !!on_fail.find(:continue)
+          process_all(node.children - [on_fail, on_pass])
+          @continue = orig
+        else
+          process_all(node.children - [on_fail, on_pass])
         end
-      else
-        if n = node.find(:on_pass)
-          process_all(n)
+        if !@groups.pop # If failed
+          if on_fail
+            @continue = !!on_fail.find(:continue)
+            process_all(on_fail)
+            @continue = false
+          end
+        else
+          if on_pass
+            process_all(on_pass)
+          end
         end
+        @groups_on_fail.pop
+        @groups_on_pass.pop
       end
-    end
-
-    def on_members(node)
-      # Do nothing, will be processed directly by the on_group handler
-    end
-
-    def on_test_result(node)
-      id, passed, *nodes = *node
-      if (passed && !failed_test_ids.include?(id)) ||
-         (!passed && failed_test_ids.include?(id))
-        process_all(nodes)
-      end
+      container << node.updated(nil, c + [on_fail, on_pass])
     end
 
     def on_set_result(node)
       unless @continue
-        @flow << node unless completed?
-        @completed = true
+        container << node unless completed?
+        @completed = true if @options[:evaluate_set_result]
       end
     end
 
@@ -110,7 +166,7 @@ module ATP
     end
 
     def on_log(node)
-      @flow << node unless completed?
+      container << node unless completed?
     end
     alias_method :on_render, :on_log
 
@@ -150,6 +206,17 @@ module ATP
 
     def completed?
       @completed
+    end
+
+    def open_container(c = [])
+      @containers ||= []
+      @containers << c
+      yield
+      @containers.pop
+    end
+
+    def container
+      @containers.last
     end
   end
 end

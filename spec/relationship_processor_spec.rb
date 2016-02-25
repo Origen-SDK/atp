@@ -5,6 +5,7 @@ describe 'The Relationship Processor' do
   it "updates both sides of the relationship" do
     ast =
       s(:flow,
+        s(:name, "sort1"),
         s(:test,
           s(:name, "test1"),
           s(:id, :t1)),
@@ -26,6 +27,7 @@ describe 'The Relationship Processor' do
     #puts p.process(ast).inspect
     p.process(ast).should ==
       s(:flow,
+        s(:name, "sort1"),
         s(:test,
           s(:name, "test1"),
           s(:id, :t1),
@@ -57,6 +59,7 @@ describe 'The Relationship Processor' do
   it "embedded test results are processed" do
     ast = to_ast <<-END
       (flow
+        (name "sort1")
         (test
           (object "test1")
           (id "ect1_1"))
@@ -75,6 +78,7 @@ describe 'The Relationship Processor' do
     #puts p.process(ast).inspect
     ast2 = to_ast <<-END
       (flow
+        (name "sort1")
         (test
           (object "test1")
           (id "ect1_1")
@@ -101,6 +105,7 @@ describe 'The Relationship Processor' do
   it "any failed is processed" do
     ast = 
       s(:flow,
+        s(:name, "sort1"),
         s(:test,
           s(:object, "test1"),
           s(:id, "t1")),
@@ -115,6 +120,7 @@ describe 'The Relationship Processor' do
     #puts p.process(ast).inspect
     ast2 =
       s(:flow,
+        s(:name, "sort1"),
         s(:test,
           s(:object, "test1"),
           s(:id, "t1"),
@@ -137,14 +143,14 @@ describe 'The Relationship Processor' do
   it "group-based if_failed is processed" do
     ast = to_ast <<-END
       (flow
+        (name "sort1")
         (group
           (name "group1")
           (id "grp1")
-          (members
-            (test
-              (object "test1"))
-            (test
-              (object "test2"))))
+          (test
+            (object "test1"))
+          (test
+            (object "test2")))
 
         (test-result "grp1" false
           (test
@@ -157,14 +163,14 @@ describe 'The Relationship Processor' do
     #puts p.process(ast).inspect
     ast2 = to_ast <<-END
       (flow
+        (name "sort1")
         (group
           (name "group1")
           (id "grp1")
-          (members
-            (test
-              (object "test1"))
-            (test
-              (object "test2")))
+          (test
+            (object "test1"))
+          (test
+            (object "test2"))
           (on-fail
             (set-run-flag "grp1_FAILED")
             (continue)))
@@ -181,37 +187,36 @@ describe 'The Relationship Processor' do
   it "group-based if_passed is processed" do
     ast = to_ast <<-END
       (flow
+        (name "sort1")
         (group
           (name "group1")
           (id "grp1")
-          (members
-            (test
-              (object "test1"))
-            (test
-              (object "test2"))))
+          (test
+            (object "test1"))
+          (test
+            (object "test2")))
 
         (test-result "grp1" true
           (group
             (name "group2")
-            (members
-              (test
-                (object "test3"))
-              (test
-                (object "test4"))))))
+            (test
+              (object "test3"))
+            (test
+              (object "test4")))))
                 END
 
     p = ATP::Processors::Relationship.new
     #puts p.process(ast).inspect
     ast2 = to_ast <<-END
       (flow
+        (name "sort1")
         (group
           (name "group1")
           (id "grp1")
-          (members
-            (test
-              (object "test1"))
-            (test
-              (object "test2")))
+          (test
+            (object "test1"))
+          (test
+            (object "test2"))
           (on-pass
             (set-run-flag "grp1_PASSED"))
           (on-fail
@@ -220,11 +225,10 @@ describe 'The Relationship Processor' do
         (run-flag "grp1_PASSED" true
           (group
             (name "group2")
-            (members
-              (test
-                (object "test3"))
-              (test
-                (object "test4"))))))
+            (test
+              (object "test3"))
+            (test
+              (object "test4")))))
     END
     p.process(ast).should == ast2
   end
