@@ -28,7 +28,7 @@ module ATP
       end
 
       def render(str)
-        n(:render, str.to_s)
+        n(:render, str)
       end
 
       def id(symbol)
@@ -49,6 +49,10 @@ module ATP
 
       def job(id, enabled, node)
         n(:job, id, enabled, node)
+      end
+
+      def run_flag(id, enabled, node)
+        n(:run_flag, id, enabled, node)
       end
 
       def set_run_flag(flag)
@@ -118,7 +122,8 @@ module ATP
         :if_any_failed, :unless_all_passed,
         :if_all_failed, :unless_any_passed,
         :if_any_passed, :unless_all_failed,
-        :if_all_passed, :unless_any_failed
+        :if_all_passed, :unless_any_failed,
+        :if_flag, :unless_flag
       ]
 
       def apply_conditions(node, conditions)
@@ -172,6 +177,16 @@ module ATP
             node = job(value, true, node)
           when :unless_job, :unless_jobs
             node = job(value, false, node)
+          when :if_flag
+            if value.is_a?(Array)
+              fail 'if_flag only accepts one flag'
+            end
+            node = run_flag(value, true, node)
+          when :unless_flag
+            if value.is_a?(Array)
+              fail 'unless_flag only accepts one flag'
+            end
+            node = run_flag(value, false, node)
           else
             fail "Unknown test condition attribute - #{key} (#{value})"
           end

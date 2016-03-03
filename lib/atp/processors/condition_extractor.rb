@@ -22,6 +22,7 @@ module ATP
       alias_method :on_test_result, :on_boolean_condition
       alias_method :on_test_executed, :on_boolean_condition
       alias_method :on_job, :on_boolean_condition
+      alias_method :on_run_flag, :on_boolean_condition
 
       def on_group(node)
         sig = node.children.select { |n| [:id, :name, :on_fail, :on_pass].include?(n.try(:type)) }

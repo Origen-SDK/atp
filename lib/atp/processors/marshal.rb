@@ -11,6 +11,10 @@ module ATP
           node.updated(nil, [{ 'Test' => node.value.name }])
         end
       end
+
+      def on_render(node)
+        node.updated(nil, [node.value.to_s])
+      end
     end
   end
 end
