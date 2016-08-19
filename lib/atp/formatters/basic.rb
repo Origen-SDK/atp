@@ -10,7 +10,19 @@ module ATP
       end
 
       def on_test(node)
-        @output += node.find(:name).value
+        if node.find(:name)
+          @output += node.find(:name).value
+        else
+          @output += node.find(:object).value['Test']
+        end
+        @output += ' F' if node.find(:failed)
+        @output += "\n"
+      end
+
+      def on_set_result(node)
+        @output += node.to_a[0].upcase
+        @output += " #{node.find(:bin).value}" if node.find(:bin)
+        @output += " #{node.find(:softbin).value}" if node.find(:softbin)
         @output += "\n"
       end
     end

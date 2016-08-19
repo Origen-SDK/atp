@@ -77,7 +77,7 @@ test4
     END
 
     ATP::Formatters::Basic.run(ast, flow_flag: "bitmap", failed_test_ids: "t1").should == <<-END
-test1
+test1 F
 test1
 test2
 test3
@@ -85,8 +85,8 @@ test4
     END
 
     ATP::Formatters::Basic.run(ast, flow_flag: "bitmap", failed_test_ids: ["t1", "t2"]).should == <<-END
-test1
-test1
+test1 F
+test1 F
 test2
 test3
     END
@@ -135,6 +135,81 @@ test4
 test6
     END
   end
+
+  it 'can handle a speed binning flow' do
+    ast =
+      s(:flow,                                                                        
+        s(:name, "prb1"),                                                             
+        s(:log, "Speed binning example bug from video 5"),
+        s(:group,
+          s(:name, "200Mhz Tests"),
+          s(:id, "g200"),
+          s(:test,
+            s(:object, {"Test"=>"test200_1"})),
+          s(:test,
+            s(:object, {"Test"=>"test200_2"})),
+          s(:test,
+            s(:object, {"Test"=>"test200_3"})),
+          s(:on_fail,
+            s(:set_run_flag, "g200_FAILED"),
+            s(:continue))),
+        s(:run_flag, "g200_FAILED", true,
+          s(:group,
+            s(:name, "100Mhz Tests"),
+            s(:id, "g100"),
+            s(:test,
+              s(:object, {"Test"=>"test100_1"}),
+              s(:on_fail,
+                s(:set_result, "fail",
+                  s(:bin, 5)))),
+            s(:test,
+              s(:object, {"Test"=>"test100_2"}),
+              s(:on_fail,
+                s(:set_result, "fail",
+                  s(:bin, 5)))),
+            s(:test,
+              s(:object, {"Test"=>"test100_3"}),
+              s(:on_fail,
+                s(:set_result, "fail",
+                  s(:bin, 5)))),
+            s(:on_fail,
+              s(:set_run_flag, "g100_RAN")),
+            s(:on_pass,
+              s(:set_run_flag, "g100_RAN")))),
+        s(:run_flag, "g100_RAN", true,
+          s(:set_result, "pass",
+            s(:bin, 2))),
+        s(:set_result, "pass",
+          s(:bin, 1),
+          s(:softbin, 1),
+          s(:bin_description, "Good die!")))
+      
+    ATP::Formatters::Basic.run(ast).should == <<-END
+test200_1
+test200_2
+test200_3
+PASS 1 1
+    END
+
+    ATP::Formatters::Basic.run(ast, failed_test_ids: ['t1']).should == <<-END
+test200_1 F
+test200_2
+test200_3
+test100_1
+test100_2
+test100_3
+PASS 2
+    END
+
+    ATP::Formatters::Basic.run(ast, failed_test_ids: ['t1','t5']).should == <<-END
+test200_1 F
+test200_2
+test200_3
+test100_1
+test100_2 F
+FAIL 5
+    END
+  end 
 
 #  it "can handle test failures" do
 #    ast = to_ast <<-END

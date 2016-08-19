@@ -79,21 +79,23 @@ module ATP
         if failed_test_ids.include?(id)
           node = node.add(n0(:failed))
           failed = true
+          if n_on_fail = node.find(:on_fail)
+            node = node.remove(n_on_fail)
+          end
         end
       end
-      # If there is a group on_fail, then remove any test specific one as that
-      # will be overridden
-      if @groups_on_fail.last
-        if n_on_fail = node.find(:on_fail)
-          node = node.remove(n_on_fail)
-        end
-      end
-      if @groups_on_pass.last
+      unless failed
         if n_on_pass = node.find(:on_pass)
           node = node.remove(n_on_pass)
         end
       end
-      container << node unless completed?
+
+      unless completed?
+        container << node
+        process_all(n_on_fail) if n_on_fail
+        process_all(n_on_pass) if n_on_pass
+      end
+
       if failed
         # Give indication to the parent group that at least one test within it failed
         if @groups.last
@@ -143,7 +145,7 @@ module ATP
         @groups_on_fail.pop
         @groups_on_pass.pop
       end
-      container << node.updated(nil, c + [on_fail, on_pass])
+      container << node.updated(nil, c)
     end
 
     def on_set_result(node)
