@@ -112,7 +112,7 @@ module ATP
       t = apply_open_conditions(options) do |options|
         conditions = options.delete(:conditions)
         options[:return] = true
-        builder.cz(cz_setup, test(instance, options), conditions: conditions)
+        builder.cz(cz_setup, test(instance, options.merge(dont_apply_conditions: true)), conditions: conditions)
       end
       append(t)
     end
@@ -263,8 +263,10 @@ module ATP
       builder.new_context
       t = yield(options)
       unless options[:context] == :current
-        open_conditions.each do |conditions|
-          t = builder.apply_conditions(t, conditions)
+        unless options[:dont_apply_conditions]
+          open_conditions.each do |conditions|
+            t = builder.apply_conditions(t, conditions)
+          end
         end
       end
       t

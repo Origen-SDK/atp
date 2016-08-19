@@ -150,10 +150,22 @@ describe 'The flow builder API' do
               s(:continue))))
     end
 
-    it "flow.test with job conditions" do
-
+    it "flow.cz with enable words" do
+      flow = ATP::Program.new.flow(:sort1) 
+      flow.with_condition if_enable: :cz do
+        flow.cz :test1, :cz1
+      end
+      flow.cz :test1, :cz1, conditions: { if_enable: :cz }
+      flow.ast.should ==
+        s(:flow,
+          s(:name, "sort1"),
+          s(:flow_flag, "cz", true,
+            s(:cz, "cz1",
+              s(:test,
+                s(:object, "test1"))),
+            s(:cz, "cz1",
+              s(:test,
+                s(:object, "test1")))))
     end
-
-
   end
 end
