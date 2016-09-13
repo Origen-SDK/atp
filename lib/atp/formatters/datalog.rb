@@ -8,7 +8,7 @@ module ATP
         str = 'Number'.ljust(15)
         str += 'Result'.ljust(9)
         str += 'Name'.ljust(55)
-        str += 'Test'.ljust(55)
+        str += 'Pattern'.ljust(55)
         str += 'ID'
         puts str
         process_all(node.children)
@@ -27,7 +27,7 @@ module ATP
           name = node.find(:object).value['Test']
         end
         str += "#{name}".ljust(55)
-        str += "#{node.find(:object).value['Test']}".ljust(55)
+        str += "#{node.find(:object).value['Pattern']}".ljust(55)
         str += "#{node.find(:id).value}"
         puts str
       end

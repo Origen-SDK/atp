@@ -197,12 +197,22 @@ module ATP
       def test(object, options = {})
         children = [n(:object, object)]
 
-        if n = (options[:name] || options[:tname] || options[:test_name])
-          children << name(n)
+        n = (options[:name] || options[:tname] || options[:test_name])
+        unless n
+          [:name, :tname, :test_name].each do |m|
+            n ||= object.respond_to?(m) ? object.send(m) : nil
+          end
         end
-        if n = (options[:number] || options[:num] || options[:tnum] || options[:test_number])
-          children << number(n)
+        children << name(n) if n
+
+        n = (options[:number] || options[:num] || options[:tnum] || options[:test_number])
+        unless n
+          [:number, :num, :tnum, :test_number].each do |m|
+            n ||= object.respond_to?(m) ? object.send(m) : nil
+          end
         end
+        children << number(n) if n
+
         children << id(options[:id].to_s.downcase.to_sym) if options[:id]
 
         children << on_fail(options[:on_fail]) if options[:on_fail]
