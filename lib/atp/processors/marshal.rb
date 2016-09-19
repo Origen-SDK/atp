@@ -3,15 +3,16 @@ module ATP
     # Makes the AST safe for Marshaling
     class Marshal < Processor
       def on_object(node)
-        if node.value.is_a?(String)
-          node.updated(nil, [{ 'Test' => node.value }])
-        elsif node.value.is_a?(Hash)
-          node.updated(nil, [node.value])
-        elsif node.value.respond_to?(:to_meta)
-          node.updated(nil, [node.value.to_meta])
+        o = node.value
+        if o.is_a?(String)
+          node.updated(nil, [{ 'Test' => o }])
+        elsif o.is_a?(Hash)
+          node.updated(nil, [o])
+        elsif o.respond_to?(:to_meta) && o.to_meta && !o.to_meta.empty?
+          node.updated(nil, [o.to_meta])
         else
-          meta = { 'Test' => node.value.name }
-          meta['Pattern'] = node.value.try(:pattern)
+          meta = { 'Test' => o.name }
+          meta['Pattern'] = o.try(:pattern)
           node.updated(nil, [meta])
         end
       end
