@@ -7,7 +7,7 @@ PATH
       sexpistol (~> 0.0)
 
 GEM
-  remote: https://rubygems.org/
+  remote: http://rubygems.org/
   specs:
     activesupport (4.2.7.1)
       i18n (~> 0.7)
@@ -141,3 +141,6 @@ PLATFORMS
 DEPENDENCIES
   atp!
   byebug (~> 3.5)
+
+BUNDLED WITH
+   1.13.4

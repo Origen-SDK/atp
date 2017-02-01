@@ -74,6 +74,10 @@ module ATP
           options[:on_fail] ||= {}
           options[:on_fail][:bin] = b
         end
+        if b = options.delete(:bin_description)
+          options[:on_fail] ||= {}
+          options[:on_fail][:bin_description] = b
+        end
         if b = options.delete(:softbin) || b = options.delete(:sbin) || b = options.delete(:soft_bin)
           options[:on_fail] ||= {}
           options[:on_fail][:softbin] = b
