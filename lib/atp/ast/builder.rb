@@ -236,6 +236,7 @@ module ATP
           children << set_run_flag(options[:set_run_flag] || options[:set_flag])
         end
         children << continue if options[:continue]
+        children << render(options[:render]) if options[:render]
         n(:on_fail, *children)
       end
 
@@ -248,6 +249,7 @@ module ATP
           children << set_run_flag(options[:set_run_flag] || options[:set_flag])
         end
         children << continue if options[:continue]
+        children << render(options[:render]) if options[:render]
         n(:on_pass, *children)
       end
 
