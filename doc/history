@@ -1,3 +1,17 @@
+<a class="anchor release_tag" name="v0_5_0"></a>
+<h1><a href="#v0_5_0">Tag: v0.5.0</a></h1>
+
+##### Branch: 'master'
+
+##### by Stephen McGinty on 09-Feb-2017 03:56AM
+
+
+Will now accept render in on\_fail/pass:
+
+~~~ruby
+flow.test "my\_test", on\_fail: { render: "something explicit" }
+~~~
+
 <a class="anchor release_tag" name="v0_4_3"></a>
 <h1><a href="#v0_4_3">Tag: v0.4.3</a></h1>
 
