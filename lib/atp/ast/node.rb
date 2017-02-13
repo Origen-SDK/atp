@@ -4,7 +4,7 @@ module ATP
     class Node < ::AST::Node
       include Factories
 
-      attr_reader :file, :line_number, :description
+      attr_reader :file, :line_number, :description, :bin_description, :softbin_description
 
       def initialize(type, children = [], properties = {})
         # Always use strings instead of symbols in the AST, makes serializing

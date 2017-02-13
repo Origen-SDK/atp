@@ -150,6 +150,31 @@ describe 'The flow builder API' do
               s(:continue))))
     end
 
+    it "flow.test with bin descriptions" do
+      f = new_flow
+      f.test("test1", bin: 1, softbin: 10, continue: true)
+      f.test("test2", bin: 1, bin_description: 'hbin2 fails', softbin: 10, continue: true)
+      f.test("test3", bin: 1, softbin: 10, softbin_description: 'sbin3 fails', continue: true)
+      f.test("test4", bin: 1, bin_description: 'hbin4 fails', softbin: 10, softbin_description: 'sbin4 fails', continue: true)
+      f.ast.find_all(:test).each do |test_node|
+        set_result_node = test_node.find(:on_fail).find(:set_result)
+        case test_node.find(:object).try(:value)
+          when 'test1'
+            set_result_node.find(:bin).try(:bin_description).should == nil
+            set_result_node.find(:softbin).try(:softbin_description).should == nil
+          when 'test2'
+            set_result_node.find(:bin).try(:bin_description).should == 'hbin2 fails'
+            set_result_node.find(:softbin).try(:softbin_description).should == nil
+          when 'test3'
+            set_result_node.find(:bin).try(:bin_description).should == nil
+            set_result_node.find(:softbin).try(:softbin_description).should == 'sbin3 fails'
+          when 'test4'
+            set_result_node.find(:bin).try(:bin_description).should == 'hbin4 fails'
+            set_result_node.find(:softbin).try(:softbin_description).should == 'sbin4 fails'
+        end
+      end
+    end
+
     it "flow.cz with enable words" do
       flow = ATP::Program.new.flow(:sort1) 
       flow.with_condition if_enable: :cz do
