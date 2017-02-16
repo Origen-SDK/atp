@@ -4,8 +4,8 @@ module ATP
     class Node < ::AST::Node
       include Factories
 
-      attr_reader :file, :line_number, :description, :bin_description, :softbin_description
-
+      attr_reader :file, :line_number, :description
+      
       def initialize(type, children = [], properties = {})
         # Always use strings instead of symbols in the AST, makes serializing
         # back and forward to a string easier
@@ -58,6 +58,26 @@ module ATP
         val
       end
 
+      # Returns the description found at the second location of an AST node like this:
+      #
+      #   node # => (SCALAR-ID "Instrument", "Description")
+      #
+      #   node.value  # => "Description"
+      #
+      # Simple error checking to verify that only bin and softbin type nodes can use
+      # this node successfully, but ultimately, the caller is responsible for calling 
+      # this only on compatible nodes.
+       def desc
+        if type == :bin || type == :softbin
+          if children.size > 1
+            unless children[1].respond_to?(:children)
+              desc = children[1]
+            end
+          end
+        end
+        desc
+      end
+      
       # Add the given nodes to the children
       def add(*nodes)
         updated(nil, children + nodes)

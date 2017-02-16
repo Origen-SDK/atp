@@ -263,12 +263,12 @@ module ATP
         children = []
         children << type
         if options[:bin] && options[:bin_description]
-          children << n(:bin, options[:bin], bin_description: options[:bin_description])
+          children << n(:bin, options[:bin], options[:bin_description])
         else
           children << n(:bin, options[:bin]) if options[:bin]
         end
         if options[:softbin] && options[:softbin_description]
-          children << n(:softbin, options[:softbin], softbin_description: options[:softbin_description])
+          children << n(:softbin, options[:softbin], options[:softbin_description])
         else
           children << n(:softbin, options[:softbin]) if options[:softbin]
         end

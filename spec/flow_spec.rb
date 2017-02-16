@@ -153,24 +153,65 @@ describe 'The flow builder API' do
     it "flow.test with bin descriptions" do
       f = new_flow
       f.test("test1", bin: 1, softbin: 10, continue: true)
-      f.test("test2", bin: 1, bin_description: 'hbin2 fails', softbin: 10, continue: true)
-      f.test("test3", bin: 1, softbin: 10, softbin_description: 'sbin3 fails', continue: true)
-      f.test("test4", bin: 1, bin_description: 'hbin4 fails', softbin: 10, softbin_description: 'sbin4 fails', continue: true)
+      f.test("test2", bin: 2, bin_description: 'hbin2 fails', softbin: 20, continue: true)
+      f.test("test3", bin: 3, softbin: 30, softbin_description: 'sbin3 fails', continue: true)
+      f.test("test4", bin: 4, bin_description: 'hbin4 fails', softbin: 40, softbin_description: 'sbin4 fails', continue: true)
+   
+      f.ast.should ==
+        s(:flow,
+          s(:name, "sort1"),
+          s(:test,
+            s(:object, "test1"),
+            s(:on_fail,
+              s(:set_result, "fail",
+                s(:bin, 1),
+                s(:softbin, 10)),
+              s(:continue))),
+          s(:test,
+            s(:object, "test2"),
+            s(:on_fail,
+              s(:set_result, "fail",
+                s(:bin, 2, "hbin2 fails"),
+                s(:softbin, 20)),
+              s(:continue))),
+          s(:test,
+            s(:object, "test3"),
+            s(:on_fail,
+              s(:set_result, "fail",
+                s(:bin, 3),
+                s(:softbin, 30, "sbin3 fails")),
+              s(:continue))),
+          s(:test,
+            s(:object, "test4"),
+            s(:on_fail,
+              s(:set_result, "fail",
+                s(:bin, 4, "hbin4 fails"),
+                s(:softbin, 40, "sbin4 fails")),
+              s(:continue))))
+      
       f.ast.find_all(:test).each do |test_node|
         set_result_node = test_node.find(:on_fail).find(:set_result)
         case test_node.find(:object).try(:value)
           when 'test1'
-            set_result_node.find(:bin).try(:bin_description).should == nil
-            set_result_node.find(:softbin).try(:softbin_description).should == nil
+            set_result_node.find(:bin).try(:value).should == 1
+            set_result_node.find(:softbin).try(:desc).should == nil
+            set_result_node.find(:softbin).try(:value).should == 10
+            set_result_node.find(:softbin).try(:desc).should == nil
           when 'test2'
-            set_result_node.find(:bin).try(:bin_description).should == 'hbin2 fails'
-            set_result_node.find(:softbin).try(:softbin_description).should == nil
+            set_result_node.find(:bin).try(:value).should == 2
+            set_result_node.find(:bin).try(:desc).should == 'hbin2 fails'
+            set_result_node.find(:softbin).try(:value).should == 20
+            set_result_node.find(:softbin).try(:desc).should == nil
           when 'test3'
-            set_result_node.find(:bin).try(:bin_description).should == nil
-            set_result_node.find(:softbin).try(:softbin_description).should == 'sbin3 fails'
+            set_result_node.find(:bin).try(:value).should == 3
+            set_result_node.find(:bin).try(:desc).should == nil
+            set_result_node.find(:softbin).try(:value).should == 30
+            set_result_node.find(:softbin).try(:desc).should == 'sbin3 fails'
           when 'test4'
-            set_result_node.find(:bin).try(:bin_description).should == 'hbin4 fails'
-            set_result_node.find(:softbin).try(:softbin_description).should == 'sbin4 fails'
+            set_result_node.find(:bin).try(:value).should == 4
+            set_result_node.find(:bin).try(:desc).should == 'hbin4 fails'
+            set_result_node.find(:softbin).try(:value).should == 40
+            set_result_node.find(:softbin).try(:desc).should == 'sbin4 fails'
         end
       end
     end
