@@ -57,26 +57,6 @@ module ATP
         val = val.children.first while val.respond_to?(:children)
         val
       end
-
-      # Returns the description found at the second location of an AST node like this:
-      #
-      #   node # => (SCALAR-ID "Instrument", "Description")
-      #
-      #   node.value  # => "Description"
-      #
-      # Simple error checking to verify that only bin and softbin type nodes can use
-      # this node successfully, but ultimately, the caller is responsible for calling 
-      # this only on compatible nodes.
-       def desc
-        if type == :bin || type == :softbin
-          if children.size > 1
-            unless children[1].respond_to?(:children)
-              desc = children[1]
-            end
-          end
-        end
-        desc
-      end
       
       # Add the given nodes to the children
       def add(*nodes)

@@ -194,24 +194,24 @@ describe 'The flow builder API' do
         case test_node.find(:object).try(:value)
           when 'test1'
             set_result_node.find(:bin).try(:value).should == 1
-            set_result_node.find(:softbin).try(:desc).should == nil
+            set_result_node.find(:bin).to_a[1].should == nil
             set_result_node.find(:softbin).try(:value).should == 10
-            set_result_node.find(:softbin).try(:desc).should == nil
+            set_result_node.find(:softbin).to_a[1].should == nil
           when 'test2'
             set_result_node.find(:bin).try(:value).should == 2
-            set_result_node.find(:bin).try(:desc).should == 'hbin2 fails'
+            set_result_node.find(:bin).to_a[1].should == 'hbin2 fails'
             set_result_node.find(:softbin).try(:value).should == 20
-            set_result_node.find(:softbin).try(:desc).should == nil
+            set_result_node.find(:softbin).to_a[1].should == nil
           when 'test3'
             set_result_node.find(:bin).try(:value).should == 3
-            set_result_node.find(:bin).try(:desc).should == nil
+            set_result_node.find(:bin).to_a[1].should == nil
             set_result_node.find(:softbin).try(:value).should == 30
-            set_result_node.find(:softbin).try(:desc).should == 'sbin3 fails'
+            set_result_node.find(:softbin).to_a[1].should == 'sbin3 fails'
           when 'test4'
             set_result_node.find(:bin).try(:value).should == 4
-            set_result_node.find(:bin).try(:desc).should == 'hbin4 fails'
+            set_result_node.find(:bin).to_a[1].should == 'hbin4 fails'
             set_result_node.find(:softbin).try(:value).should == 40
-            set_result_node.find(:softbin).try(:desc).should == 'sbin4 fails'
+            set_result_node.find(:softbin).to_a[1].should == 'sbin4 fails'
         end
       end
     end
