@@ -230,7 +230,10 @@ module ATP
       def on_fail(options = {})
         children = []
         if options[:bin] || options[:softbin]
-          children << set_result(:fail, bin: options[:bin], softbin: options[:softbin], bin_description: options[:bin_description])
+          fail_opts = { bin: options[:bin], softbin: options[:softbin] }
+          fail_opts[:bin_description] = options[:bin_description] if options[:bin_description]
+          fail_opts[:softbin_description] = options[:softbin_description] if options[:softbin_description]
+          children << set_result(:fail, fail_opts)
         end
         if options[:set_run_flag] || options[:set_flag]
           children << set_run_flag(options[:set_run_flag] || options[:set_flag])
@@ -243,7 +246,10 @@ module ATP
       def on_pass(options = {})
         children = []
         if options[:bin] || options[:softbin]
-          children << set_result(:pass, bin: options[:bin], softbin: options[:softbin], bin_description: options[:bin_description])
+          pass_opts = { bin: options[:bin], softbin: options[:softbin] }
+          pass_opts[:bin_description] = options[:bin_description] if options[:bin_description]
+          pass_opts[:softbin_description] = options[:softbin_description] if options[:softbin_description]
+          children << set_result(:pass, pass_opts)
         end
         if options[:set_run_flag] || options[:set_flag]
           children << set_run_flag(options[:set_run_flag] || options[:set_flag])
@@ -256,9 +262,16 @@ module ATP
       def set_result(type, options = {})
         children = []
         children << type
-        children << n(:bin, options[:bin])  if options[:bin]
-        children << n(:softbin, options[:softbin])  if options[:softbin]
-        children << n(:bin_description, options[:bin_description])  if options[:bin_description]
+        if options[:bin] && options[:bin_description]
+          children << n(:bin, options[:bin], options[:bin_description])
+        else
+          children << n(:bin, options[:bin]) if options[:bin]
+        end
+        if options[:softbin] && options[:softbin_description]
+          children << n(:softbin, options[:softbin], options[:softbin_description])
+        else
+          children << n(:softbin, options[:softbin]) if options[:softbin]
+        end
         result = n(:set_result, *children)
 
         if options[:conditions]
