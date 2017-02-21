@@ -5,7 +5,7 @@ module ATP
       include Factories
 
       attr_reader :file, :line_number, :description
-      
+
       def initialize(type, children = [], properties = {})
         # Always use strings instead of symbols in the AST, makes serializing
         # back and forward to a string easier
@@ -57,7 +57,7 @@ module ATP
         val = val.children.first while val.respond_to?(:children)
         val
       end
-      
+
       # Add the given nodes to the children
       def add(*nodes)
         updated(nil, children + nodes)
