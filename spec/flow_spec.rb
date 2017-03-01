@@ -112,7 +112,7 @@ describe 'The flow builder API' do
           s(:test,
             s(:object, "test3")),
           s(:on_fail,
-            s(:set_run_flag, "g1_FAILED"),
+            s(:set_run_flag, "g1_FAILED", "auto_generated"),
             s(:continue))),
         s(:run_flag, "g1_FAILED", true,
           s(:group, 

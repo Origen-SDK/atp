@@ -81,7 +81,7 @@ describe 'AST optimization' do
             (on-fail
               (bin 90)))
           (on-fail
-            (set-run-flag "gt_grp1_FAILED")
+            (set-run-flag "gt_grp1_FAILED" "auto_generated")
             (continue)))
         (run-flag "gt_grp1_FAILED" true
           (test
@@ -100,7 +100,7 @@ describe 'AST optimization' do
               (on-fail
                 (bin 90)))
             (on-fail
-              (set-run-flag "gt_grp2_FAILED")
+              (set-run-flag "gt_grp2_FAILED" "auto_generated")
               (continue))))
         (run-flag "gt_grp2_FAILED" true
           (test
@@ -188,7 +188,7 @@ describe 'AST optimization' do
             (id "l1t3")
             (on-fail
               (bin 10)
-              (set-run-flag "l1t3_FAILED")
+              (set-run-flag "l1t3_FAILED" "auto_generated")
               (continue)))
           (run-flag "l1t3_FAILED" true
             (test
@@ -200,7 +200,7 @@ describe 'AST optimization' do
             (id "l1t5")
             (on-fail
               (bin 12)
-              (set-run-flag "l1t5_FAILED")
+              (set-run-flag "l1t5_FAILED" "auto_generated")
               (continue)))
           (group
             (name "level2")
@@ -217,7 +217,7 @@ describe 'AST optimization' do
               (id "l2t3")
               (on-fail
                 (bin 10)
-                (set-run-flag "l2t3_FAILED")
+                (set-run-flag "l2t3_FAILED" "auto_generated")
                 (continue)))
             (run-flag "l2t3_FAILED" true
               (test
@@ -302,7 +302,7 @@ describe 'AST optimization' do
           s(:object, "t1"),
           s(:id, "check_drb_completed"),
           s(:on_fail,
-            s(:set_run_flag, "check_drb_completed_FAILED"),
+            s(:set_run_flag, "check_drb_completed_FAILED", "auto_generated"),
             s(:continue))),
         s(:run_flag, "check_drb_completed_FAILED", true,
           s(:test,
@@ -314,7 +314,7 @@ describe 'AST optimization' do
               s(:set_result, "fail",
                 s(:bin, 204),
                 s(:softbin, 204)),
-              s(:set_run_flag,"check_prb1_new_FAILED"),
+              s(:set_run_flag,"check_prb1_new_FAILED", "auto_generated"),
               s(:continue))),
           s(:run_flag, "check_prb1_new_FAILED", true,
             s(:test,
