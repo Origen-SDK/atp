@@ -42,5 +42,5 @@ module ATP
     def n2(type, arg1, arg2)
       n(type, [arg1, arg2])
     end
-   end
+  end
 end
