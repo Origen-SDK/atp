@@ -38,5 +38,9 @@ module ATP
     def n1(type, arg)
       n(type, [arg])
     end
+
+    def n2(type, arg1, arg2)
+      n(type, [arg1, arg2])
+    end
   end
 end

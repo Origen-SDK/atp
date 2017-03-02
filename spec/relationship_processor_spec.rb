@@ -32,7 +32,7 @@ describe 'The Relationship Processor' do
           s(:name, "test1"),
           s(:id, :t1),
           s(:on_pass,
-            s(:set_run_flag, "t1_PASSED")),
+            s(:set_run_flag, "t1_PASSED", "auto_generated")),
           s(:on_fail,
             s(:continue))),
         s(:test,
@@ -41,9 +41,9 @@ describe 'The Relationship Processor' do
           s(:on_fail,
             s(:bin, 10),
             s(:continue),
-            s(:set_run_flag, "t2_FAILED")),
+            s(:set_run_flag, "t2_FAILED", "auto_generated")),
           s(:on_pass,
-            s(:set_run_flag, "t2_PASSED"))),
+            s(:set_run_flag, "t2_PASSED", "auto_generated"))),
         s(:run_flag, "t1_PASSED", true,
           s(:test,
             s(:name, "test3"))),
@@ -83,7 +83,7 @@ describe 'The Relationship Processor' do
           (object "test1")
           (id "ect1_1")
           (on-fail
-            (set-run-flag "ect1_1_FAILED")
+            (set-run-flag "ect1_1_FAILED" "auto_generated")
             (continue)))
         (run-flag "ect1_1_FAILED" true
           (test
@@ -92,7 +92,7 @@ describe 'The Relationship Processor' do
             (object "test3")
             (id "ect1_3")
             (on-fail
-              (set-run-flag "ect1_3_FAILED")
+              (set-run-flag "ect1_3_FAILED" "auto_generated")
               (continue)))
           (run-flag "ect1_3_FAILED" true
             (test
@@ -125,13 +125,13 @@ describe 'The Relationship Processor' do
           s(:object, "test1"),
           s(:id, "t1"),
           s(:on_fail,
-            s(:set_run_flag, "t1_FAILED"),
+            s(:set_run_flag, "t1_FAILED", "auto_generated"),
             s(:continue))),
         s(:test,
           s(:object, "test2"),
           s(:id, "t2"),
           s(:on_fail,
-            s(:set_run_flag, "t2_FAILED"),
+            s(:set_run_flag, "t2_FAILED", "auto_generated"),
             s(:continue))),
         s(:run_flag, ["t1_FAILED", "t2_FAILED"], true,
           s(:test,
@@ -172,7 +172,7 @@ describe 'The Relationship Processor' do
           (test
             (object "test2"))
           (on-fail
-            (set-run-flag "grp1_FAILED")
+            (set-run-flag "grp1_FAILED" "auto_generated")
             (continue)))
 
         (run-flag "grp1_FAILED" true
@@ -218,7 +218,7 @@ describe 'The Relationship Processor' do
           (test
             (object "test2"))
           (on-pass
-            (set-run-flag "grp1_PASSED"))
+            (set-run-flag "grp1_PASSED" "auto_generated"))
           (on-fail
             (continue)))
 

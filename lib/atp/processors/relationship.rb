@@ -61,7 +61,7 @@ module ATP
         node = node.ensure_node_present(:on_fail)
         node.updated(nil, node.children.map do |n|
           if n.type == :on_pass
-            n = n.add n1(:set_run_flag, "#{id}_PASSED")
+            n = n.add n2(:set_run_flag, "#{id}_PASSED", :auto_generated)
           elsif n.type == :on_fail
             n.ensure_node_present(:continue)
           else
@@ -74,7 +74,7 @@ module ATP
         node = node.ensure_node_present(:on_fail)
         node.updated(nil, node.children.map do |n|
           if n.type == :on_fail
-            n = n.add n1(:set_run_flag, "#{id}_FAILED")
+            n = n.add n2(:set_run_flag, "#{id}_FAILED", :auto_generated)
             n.ensure_node_present(:continue)
           else
             n
@@ -87,7 +87,7 @@ module ATP
         node = node.ensure_node_present(:on_pass)
         node.updated(nil, node.children.map do |n|
           if n.type == :on_pass || n.type == :on_fail
-            n = n.add n1(:set_run_flag, "#{id}_RAN")
+            n = n.add n2(:set_run_flag, "#{id}_RAN", :auto_generated)
           else
             n
           end
