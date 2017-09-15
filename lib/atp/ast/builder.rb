@@ -137,9 +137,9 @@ module ATP
           key = key.to_s.downcase.to_sym
           # Represent all condition values as lower cased strings internally
           if value.is_a?(Array)
-            value = value.map { |v| v.to_s.downcase }
+            value = value.map { |v| (v[0]=='!') ? v : v.to_s.downcase }
           else
-            value = value.to_s.downcase
+            value = (value[0]=='!') ? value : value.to_s.downcase
           end
           context[:conditions] << { key => value }
           case key
