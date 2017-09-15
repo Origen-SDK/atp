@@ -156,7 +156,10 @@ module ATP
     # Insert explicitly rendered content in to the flow
     def render(str, options = {})
       extract_meta!(options)
-      append builder.render(str)
+      t = apply_open_conditions(options) do |options|
+        builder.render(str, options)
+      end
+      append(t)
     end
 
     def with_condition(options)

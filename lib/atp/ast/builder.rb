@@ -27,8 +27,13 @@ module ATP
         end
       end
 
-      def render(str)
-        n(:render, str)
+      def render(str, options = {})
+        test = n(:render, str)
+        if options[:conditions]
+          apply_conditions(test, options[:conditions])
+        else
+          test
+        end
       end
 
       def id(symbol)
