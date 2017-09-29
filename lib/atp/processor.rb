@@ -23,6 +23,23 @@ module ATP
       end
     end
 
+    # Some of our processors remove a wrapping node from the AST, returning
+    # a node of type :inline containing the children which should be inlined.
+    # Here we override the default version of this method to deal with handlers
+    # that return an inline node in place of a regular node.
+    def process_all(nodes)
+      results = []
+      nodes.to_a.each do |node|
+        n = process(node)
+        if n.respond_to?(:type) && n.type == :inline
+          results += n.children
+        else
+          results << n
+        end
+      end
+      results
+    end
+
     def handler_missing(node)
       node.updated(nil, process_all(node.children))
     end

@@ -21,7 +21,6 @@ module ATP
   # and to implement the flow control API
   module Processors
     autoload :Condition,    'atp/processors/condition'
-    autoload :ConditionExtractor, 'atp/processors/condition_extractor'
     autoload :Relationship, 'atp/processors/relationship'
     autoload :PreCleaner, 'atp/processors/pre_cleaner'
     autoload :PostCleaner, 'atp/processors/post_cleaner'
