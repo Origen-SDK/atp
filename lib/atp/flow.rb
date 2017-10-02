@@ -41,6 +41,14 @@ module ATP
       ast
     end
 
+    # Indicate the that given flags should be considered volatile (can change at any time), which will
+    # prevent them from been touched by the optimization algorithms
+    def volatile(*flags)
+      options = flags.pop if flags.last.is_a?(Hash)
+      flags = flags.flatten
+      @raw = builder.add_volatile_flags(@raw, flags)
+    end
+
     # Group all tests generated within the given block
     #
     # @example

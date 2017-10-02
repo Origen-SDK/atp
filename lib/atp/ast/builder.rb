@@ -14,6 +14,24 @@ module ATP
         n(:flow, name(str))
       end
 
+      # Ensures the given flow ast has a volatile node, then adds the
+      # given flags to it
+      def add_volatile_flags(flow, flags)
+        name, *nodes = *flow
+        if nodes[0] && nodes[0].type == :volatile
+          v = nodes.shift
+        else
+          v = n0(:volatile)
+        end
+        existing = v.children.map { |f| f.type == :flag ? f.value : nil }.compact
+        new = []
+        flags.each do |flag|
+          new << n(:flag, flag) unless existing.include?(flag)
+        end
+        v = v.updated(nil, v.children + new)
+        flow.updated(nil, [name, v] + nodes)
+      end
+
       def name(str)
         n(:name, str.to_s)
       end

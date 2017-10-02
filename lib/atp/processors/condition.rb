@@ -44,20 +44,29 @@ module ATP
     #
     class Condition < Processor
       def on_flow(node)
+        extract_volatiles(node)
         node.updated(nil, optimize(process_all(node.children)))
       end
 
       def on_flow_flag(node)
         flag, state, *nodes = *node
         if conditions_to_remove.any? { |c| node.type == c.type && c.to_a == [flag, state] }
-          # This ensures any duplicate conditions matching the current one get removed
-          conditions_to_remove << node.updated(nil, [flag, state])
-          result = n(:inline, optimize(process_all(nodes)))
-          conditions_to_remove.pop
+          if volatile?(flag)
+            result = n(:inline, optimize(process_all(nodes)))
+          else
+            # This ensures any duplicate conditions matching the current one get removed
+            conditions_to_remove << node.updated(nil, [flag, state])
+            result = n(:inline, optimize(process_all(nodes)))
+            conditions_to_remove.pop
+          end
         else
-          conditions_to_remove << node.updated(nil, [flag, state])
-          result = node.updated(nil, [flag, state] + optimize(process_all(nodes)))
-          conditions_to_remove.pop
+          if volatile?(flag)
+            result = node.updated(nil, [flag, state] + optimize(process_all(nodes)))
+          else
+            conditions_to_remove << node.updated(nil, [flag, state])
+            result = node.updated(nil, [flag, state] + optimize(process_all(nodes)))
+            conditions_to_remove.pop
+          end
         end
         result
       end
@@ -134,7 +143,13 @@ module ATP
 
       def conditions(node)
         result = []
-        if [:flow_flag, :run_flag, :test_result, :job, :test_executed].include?(node.type)
+        if [:flow_flag, :run_flag].include?(node.type)
+          flag, state, *children = *node
+          unless volatile?(flag)
+            result << node.updated(nil, [flag, state])
+          end
+          result += conditions(children.first) if children.first
+        elsif [:test_result, :job, :test_executed].include?(node.type)
           flag, state, *children = *node
           result << node.updated(nil, [flag, state])
           result += conditions(children.first) if children.first

@@ -22,7 +22,8 @@ describe 'The Condition Processor' do
               s(:object, "test3")))))
     p = ATP::Processors::Condition.new
     #puts p.process(flow.raw).inspect
-    p.process(flow.raw).should ==
+    ast = p.process(flow.raw)
+    ast.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -447,5 +448,56 @@ describe 'The Condition Processor' do
               s(:object, "erase_all")))))
 
     p.process(ast).should == ast2
+  end
+
+  it "Removes duplicate conditions" do
+    ast = 
+      s(:flow,
+        s(:name, "sort1"),
+        s(:flow_flag, "data_collection", true,
+          s(:flow_flag, "data_collection", true,
+            s(:test,
+              s(:object, "nvm_dist_vcg")))))
+
+    p = ATP::Processors::Condition.new
+    p.process(ast).should == 
+      s(:flow,
+        s(:name, "sort1"),
+        s(:flow_flag, "data_collection", true,
+          s(:test,
+            s(:object, "nvm_dist_vcg"))))
+  end
+
+  it "Flags conditions are not optimized when marked as volatile" do
+    flow = ATP::Program.new.flow(:sort1) 
+    flow.with_conditions if_flag: "my_flag" do
+      flow.test :test1, conditions: { if_flag: "my_flag" }
+      flow.test :test2, conditions: { if_flag: "my_flag" }
+    end
+    flow.ast.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:run_flag, "my_flag", true,
+          s(:test,
+            s(:object, "test1")),
+          s(:test,
+            s(:object, "test2"))))
+
+    flow.volatile "my_flag", :$my_other_flag
+
+    flow.ast.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:volatile,
+          s(:flag, "my_flag"),
+          s(:flag, "$my_other_flag")),
+        s(:run_flag, "my_flag", true,
+          s(:run_flag, "my_flag", true,
+            s(:test,
+              s(:object, "test1")))),
+        s(:run_flag, "my_flag", true,
+          s(:run_flag, "my_flag", true,
+            s(:test,
+              s(:object, "test2")))))
   end
 end

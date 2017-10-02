@@ -59,5 +59,30 @@ module ATP
     def n2(type, arg1, arg2)
       n(type, [arg1, arg2])
     end
+
+    def extract_volatiles(flow)
+      @volatiles = {}
+      if v = flow.find(:volatile)
+        @volatiles[:flags] = Array(v.find_all(:flag)).map(&:value)
+      end
+    end
+
+    def volatile_flags
+      unless @volatiles
+        fail 'You must first call extract_volatiles(node) from your on_flow hander method'
+      end
+      @volatiles[:flags] || []
+    end
+
+    # Returns true if the given flag name has been marked as volatile
+    def volatile?(flag)
+      volatile_flags.any? { |f| clean_flag(f) == clean_flag(flag) }
+    end
+
+    def clean_flag(flag)
+      flag = flag.to_s
+      flag[0] = '' if flag[0] == '$'
+      flag.downcase
+    end
   end
 end
