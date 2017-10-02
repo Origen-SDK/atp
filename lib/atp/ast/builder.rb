@@ -255,7 +255,11 @@ module ATP
         if pins = options[:pin] || options[:pins]
           pins = [pins] unless pins.is_a?(Array)
           pins.each do |p|
-            children << pin(p[:name])
+            if p.is_a?(Hash)
+              children << pin(p[:name])
+            else
+              children << pin(p)
+            end
           end
         end
 
