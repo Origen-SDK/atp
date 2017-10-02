@@ -23,6 +23,23 @@ module ATP
       end
     end
 
+    # Some of our processors remove a wrapping node from the AST, returning
+    # a node of type :inline containing the children which should be inlined.
+    # Here we override the default version of this method to deal with handlers
+    # that return an inline node in place of a regular node.
+    def process_all(nodes)
+      results = []
+      nodes.to_a.each do |node|
+        n = process(node)
+        if n.respond_to?(:type) && n.type == :inline
+          results += n.children
+        else
+          results << n
+        end
+      end
+      results
+    end
+
     def handler_missing(node)
       node.updated(nil, process_all(node.children))
     end
@@ -41,6 +58,32 @@ module ATP
 
     def n2(type, arg1, arg2)
       n(type, [arg1, arg2])
+    end
+
+    def extract_volatiles(flow)
+      @volatiles = {}
+      if v = flow.find(:volatile)
+        @volatiles[:flags] = Array(v.find_all(:flag)).map(&:value)
+      end
+    end
+
+    def volatile_flags
+      unless @volatiles
+        fail 'You must first call extract_volatiles(node) from your on_flow hander method'
+      end
+      @volatiles[:flags] || []
+    end
+
+    # Returns true if the given flag name has been marked as volatile
+    def volatile?(flag)
+      result = volatile_flags.any? { |f| clean_flag(f) == clean_flag(flag) }
+      result
+    end
+
+    def clean_flag(flag)
+      flag = flag.dup.to_s
+      flag[0] = '' if flag[0] == '$'
+      flag.downcase
     end
   end
 end

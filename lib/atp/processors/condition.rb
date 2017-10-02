@@ -43,134 +43,131 @@ module ATP
     #               (name "test4")))))))
     #
     class Condition < Processor
-      CONDITION_NODES = [:flow_flag, :test_result, :test_executed, :group, :job]
+      def on_flow(node)
+        extract_volatiles(node)
+        node.updated(nil, optimize(process_all(node.children)))
+      end
 
-      def process(node)
-        # Bit of a hack - To get all of the nested conditions optimized away it is necessary
-        # to execute this recursively a few times. This guard ensures that the recursion is
-        # only performed on the top-level and not on every process operation.
-        if @top_level_called
-          super
-        else
-          @top_level_called = true
-          ast1 = nil
-          ast2 = node
-          while ast1 != ast2
-            ast1 = super(ast2)
-            ast2 = super(ast1)
+      def on_flow_flag(node)
+        flag, state, *nodes = *node
+        if conditions_to_remove.any? { |c| node.type == c.type && c.to_a == [flag, state] }
+          if volatile?(flag)
+            result = n(:inline, optimize(process_all(nodes)))
+          else
+            # This ensures any duplicate conditions matching the current one get removed
+            conditions_to_remove << node.updated(nil, [flag, state])
+            result = n(:inline, optimize(process_all(nodes)))
+            conditions_to_remove.pop
           end
-          @top_level_called = false
-          ast1
-        end
-      end
-
-      def on_boolean_condition(node)
-        children = node.children.dup
-        name = children.shift
-        state = children.shift
-        remove_condition << node
-        children = extract_common_embedded_conditions(n(:temp, children))
-        remove_condition.pop
-        if condition_to_be_removed?(node)
-          process_all(children)
         else
-          node.updated(nil, [name, state] + process_all(children))
+          if volatile?(flag)
+            result = node.updated(nil, [flag, state] + optimize(process_all(nodes)))
+          else
+            conditions_to_remove << node.updated(nil, [flag, state])
+            result = node.updated(nil, [flag, state] + optimize(process_all(nodes)))
+            conditions_to_remove.pop
+          end
         end
+        result
       end
-      alias_method :on_flow_flag, :on_boolean_condition
-      alias_method :on_test_result, :on_boolean_condition
-      alias_method :on_test_executed, :on_boolean_condition
-      alias_method :on_job, :on_boolean_condition
+      alias_method :on_test_result, :on_flow_flag
+      alias_method :on_job, :on_flow_flag
+      alias_method :on_run_flag, :on_flow_flag
+      alias_method :on_test_executed, :on_flow_flag
 
       def on_group(node)
-        children = node.children.dup
-        name = children.shift
-        remove_condition << node
-        children = extract_common_embedded_conditions(n(:temp, children))
-        remove_condition.pop
-        if condition_to_be_removed?(node)
-          process_all(children)
-        else
-          node.updated(nil, [name] + process_all(children))
-        end
-      end
-
-      # Returns true if the given node contains the given condition within
-      # its immediate children
-      def has_condition?(condition, node)
-        ([node] + node.children.to_a).any? do |n|
-          if n.is_a?(ATP::AST::Node)
-            equal_conditions?(condition, n)
-          end
-        end
-      end
-
-      def condition_to_be_removed?(node)
-        remove_condition.any? { |c| equal_conditions?(c, node) }
-      end
-
-      def equal_conditions?(node1, node2)
-        if node1.type == node2.type
-          if node1.type == :group
-            node1.to_a.take(1) == node2.to_a.take(1)
-          else
-            node1.to_a.take(2) == node2.to_a.take(2)
-          end
-        end
-      end
-
-      def condition?(node)
-        node.is_a?(ATP::AST::Node) && CONDITION_NODES.include?(node.type)
-      end
-
-      def on_flow(node)
         name, *nodes = *node
-        nodes = extract_common_embedded_conditions(nodes)
-        node.updated(nil, [name] + nodes)
+        if conditions_to_remove.any? { |c| node.type == c.type && c.to_a == [name] }
+          conditions_to_remove << node.updated(nil, [name])
+          result = n(:inline, optimize(process_all(nodes)))
+          conditions_to_remove.pop
+        else
+          conditions_to_remove << node.updated(nil, [name])
+          result = node.updated(nil, [name] + optimize(process_all(nodes)))
+          conditions_to_remove.pop
+        end
+        result
       end
 
-      def extract_common_embedded_conditions(nodes)
-        nodes = [nodes] unless nodes.is_a?(Array)
-        result = []
-        cond_a = nil
-        test_a = nil
-        ConditionExtractor.new.run(nodes).each do |cond_b, test_b|
-          if cond_a
-            common = cond_a & cond_b
-            if common.empty?
-              result << combine(cond_a, extract_common_embedded_conditions(test_a))
-              cond_a = cond_b
-              test_a = test_b
+      def optimize(nodes)
+        results = []
+        node1 = nil
+        nodes.each do |node2|
+          if node1
+            if can_be_combined?(node1, node2)
+              node1 = process(combine(node1, node2))
             else
-              a = combine(cond_a - common, test_a)
-              b = combine(cond_b - common, test_b)
-              cond_a = common
-              test_a = [a, b].flatten
+              results << node1
+              node1 = node2
             end
           else
-            cond_a = cond_b
-            test_a = test_b
+            node1 = node2
           end
         end
-        if nodes == [test_a]
-          nodes
+        results << node1 if node1
+        results
+      end
+
+      def can_be_combined?(node1, node2)
+        if condition_node?(node1) && condition_node?(node2)
+          !(conditions(node1) & conditions(node2)).empty?
         else
-          result << combine(cond_a, extract_common_embedded_conditions(test_a))
-          result.flatten
+          false
         end
       end
 
-      def combine(conditions, node)
-        if conditions && !conditions.empty?
-          conditions.reverse_each do |n|
-            node = n.updated(nil, n.children + (node.is_a?(Array) ? node : [node]))
+      def condition_node?(node)
+        node.respond_to?(:type) &&
+          [:flow_flag, :run_flag, :test_result, :group, :job, :test_executed].include?(node.type)
+      end
+
+      def combine(node1, node2)
+        common = conditions(node1) & conditions(node2)
+        common.each { |condition| conditions_to_remove << condition }
+        node1 = process(node1)
+        node1 = [node1] unless node1.is_a?(Array)
+        node2 = process(node2)
+        node2 = [node2] unless node2.is_a?(Array)
+        common.size.times { conditions_to_remove.pop }
+
+        node = nil
+        common.reverse_each do |condition|
+          if node
+            node = condition.updated(nil, condition.children + [node])
+          else
+            node = condition.updated(nil, condition.children + node1 + node2)
           end
         end
         node
       end
 
-      def remove_condition
-        @remove_condition ||= []
+      def conditions(node)
+        result = []
+        if [:flow_flag, :run_flag].include?(node.type)
+          flag, state, *children = *node
+          unless volatile?(flag)
+            result << node.updated(nil, [flag, state])
+          end
+          result += conditions(children.first) if children.first
+        elsif [:test_result, :job, :test_executed].include?(node.type)
+          flag, state, *children = *node
+          result << node.updated(nil, [flag, state])
+          result += conditions(children.first) if children.first
+        elsif node.type == :group
+          name, *children = *node
+          # Sometimes a group can have an ID
+          if children.first.try(:type) == :id
+            result << node.updated(nil, [name, children.shift])
+          else
+            result << node.updated(nil, [name])
+          end
+          result += conditions(children.first) if children.first
+        end
+        result
+      end
+
+      def conditions_to_remove
+        @conditions_to_remove ||= []
       end
     end
   end

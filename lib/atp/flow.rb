@@ -41,6 +41,14 @@ module ATP
       ast
     end
 
+    # Indicate the that given flags should be considered volatile (can change at any time), which will
+    # prevent them from been touched by the optimization algorithms
+    def volatile(*flags)
+      options = flags.pop if flags.last.is_a?(Hash)
+      flags = flags.flatten
+      @raw = builder.add_volatile_flags(@raw, flags)
+    end
+
     # Group all tests generated within the given block
     #
     # @example
@@ -102,6 +110,16 @@ module ATP
       end
       append(t) unless r
       t
+    end
+
+    # Equivalent to calling test, but returns a sub_test node instead of adding it to the flow.
+    # It will also ignore any condition nodes that would normally wrap the equivalent flow.test call.
+    #
+    # This is a helper to create sub_tests for inclusion in a top-level test node.
+    def sub_test(instance, options = {})
+      options[:return] = true
+      options[:ignore_all_conditions] = true
+      test(instance, options)
     end
 
     def bin(number, options = {})
@@ -268,19 +286,23 @@ module ATP
     end
 
     def apply_open_conditions(options)
-      if options[:context] == :current
-        options[:conditions] = builder.context[:conditions]
-      end
-      builder.new_context
-      t = yield(options)
-      unless options[:context] == :current
-        unless options[:dont_apply_conditions]
-          open_conditions.each do |conditions|
-            t = builder.apply_conditions(t, conditions)
+      if options[:ignore_all_conditions]
+        yield(options)
+      else
+        if options[:context] == :current
+          options[:conditions] = builder.context[:conditions]
+        end
+        builder.new_context
+        t = yield(options)
+        unless options[:context] == :current
+          unless options[:dont_apply_conditions]
+            open_conditions.each do |conditions|
+              t = builder.apply_conditions(t, conditions)
+            end
           end
         end
+        t
       end
-      t
     end
 
     def extract_meta!(options)
