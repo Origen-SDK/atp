@@ -112,6 +112,16 @@ module ATP
       t
     end
 
+    # Equivalent to calling test, but returns a sub_test node instead of adding it to the flow.
+    # It will also ignore any condition nodes that would normally wrap the equivalent flow.test call.
+    #
+    # This is a helper to create sub_tests for inclusion in a top-level test node.
+    def sub_test(instance, options = {})
+      options[:return] = true
+      options[:ignore_all_conditions] = true
+      test(instance, options)
+    end
+
     def bin(number, options = {})
       extract_meta!(options)
       t = apply_open_conditions(options) do |options|
@@ -276,19 +286,23 @@ module ATP
     end
 
     def apply_open_conditions(options)
-      if options[:context] == :current
-        options[:conditions] = builder.context[:conditions]
-      end
-      builder.new_context
-      t = yield(options)
-      unless options[:context] == :current
-        unless options[:dont_apply_conditions]
-          open_conditions.each do |conditions|
-            t = builder.apply_conditions(t, conditions)
+      if options[:ignore_all_conditions]
+        yield(options)
+      else
+        if options[:context] == :current
+          options[:conditions] = builder.context[:conditions]
+        end
+        builder.new_context
+        t = yield(options)
+        unless options[:context] == :current
+          unless options[:dont_apply_conditions]
+            open_conditions.each do |conditions|
+              t = builder.apply_conditions(t, conditions)
+            end
           end
         end
+        t
       end
-      t
     end
 
     def extract_meta!(options)

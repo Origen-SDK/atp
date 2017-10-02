@@ -238,6 +238,51 @@ module ATP
 
         children << id(options[:id].to_s.downcase.to_sym) if options[:id]
 
+        if levels = options[:level] || options[:levels]
+          levels = [levels] unless levels.is_a?(Array)
+          levels.each do |l|
+            children << level(l[:name], l[:value], l[:unit] || l[:units])
+          end
+        end
+
+        if lims = options[:limit] || options[:limits]
+          lims = [lims] unless lims.is_a?(Array)
+          lims.each do |l|
+            children << limit(l[:value], l[:rule], l[:unit] || l[:units])
+          end
+        end
+
+        if pins = options[:pin] || options[:pins]
+          pins = [pins] unless pins.is_a?(Array)
+          pins.each do |p|
+            children << pin(p[:name])
+          end
+        end
+
+        if pats = options[:pattern] || options[:patterns]
+          pats = [pats] unless pats.is_a?(Array)
+          pats.each do |p|
+            if p.is_a?(Hash)
+              children << pattern(p[:name], p[:path])
+            else
+              children << pattern(p)
+            end
+          end
+        end
+
+        if options[:meta]
+          attrs = []
+          options[:meta].each { |k, v| attrs << attribute(k, v) }
+          children << n(:meta, *attrs)
+        end
+
+        if subs = options[:sub_test] || options[:sub_tests]
+          subs = [subs] unless subs.is_a?(Array)
+          subs.each do |s|
+            children << s.updated(:sub_test, nil)
+          end
+        end
+
         children << on_fail(options[:on_fail]) if options[:on_fail]
         children << on_pass(options[:on_pass]) if options[:on_pass]
 
@@ -248,6 +293,38 @@ module ATP
         else
           test
         end
+      end
+
+      def pattern(name, path = nil)
+        if path
+          n(:pattern, name, path)
+        else
+          n(:pattern, name)
+        end
+      end
+
+      def attribute(name, value)
+        n(:attribute, name, value)
+      end
+
+      def level(name, value, units = nil)
+        if units
+          n(:level, name, value, units)
+        else
+          n(:level, name, value)
+        end
+      end
+
+      def limit(value, rule, units = nil)
+        if units
+          n(:limit, value, rule, units)
+        else
+          n(:limit, value, rule)
+        end
+      end
+
+      def pin(name)
+        n(:pin, name)
       end
 
       def on_fail(options = {})
