@@ -471,13 +471,24 @@ describe 'The Condition Processor' do
   it "Flags conditions are not optimized when marked as volatile" do
     flow = ATP::Program.new.flow(:sort1) 
     flow.with_conditions if_flag: "my_flag" do
+      flow.test :test1, on_fail: { set_flag: "$My_Mixed_Flag", continue: true }
+      flow.test :test2, conditions: { if_flag: "$My_Mixed_Flag" }
       flow.test :test1, conditions: { if_flag: "my_flag" }
       flow.test :test2, conditions: { if_flag: "my_flag" }
     end
+
     flow.ast.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:run_flag, "my_flag", true,
+          s(:test,
+            s(:object, "test1"),
+            s(:on_fail,
+              s(:set_run_flag, "$My_Mixed_Flag"),
+              s(:continue))),
+          s(:run_flag, "$My_Mixed_Flag", true,
+            s(:test,
+              s(:object, "test2"))),
           s(:test,
             s(:object, "test1")),
           s(:test,
@@ -491,6 +502,16 @@ describe 'The Condition Processor' do
         s(:volatile,
           s(:flag, "my_flag"),
           s(:flag, "$my_other_flag")),
+        s(:run_flag, "my_flag", true,
+          s(:test,
+            s(:object, "test1"),
+            s(:on_fail,
+              s(:set_run_flag, "$My_Mixed_Flag"),
+              s(:continue)))),
+        s(:run_flag, "my_flag", true,
+          s(:run_flag, "$My_Mixed_Flag", true,
+            s(:test,
+              s(:object, "test2")))),
         s(:run_flag, "my_flag", true,
           s(:run_flag, "my_flag", true,
             s(:test,

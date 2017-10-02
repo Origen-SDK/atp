@@ -76,11 +76,12 @@ module ATP
 
     # Returns true if the given flag name has been marked as volatile
     def volatile?(flag)
-      volatile_flags.any? { |f| clean_flag(f) == clean_flag(flag) }
+      result = volatile_flags.any? { |f| clean_flag(f) == clean_flag(flag) }
+      result
     end
 
     def clean_flag(flag)
-      flag = flag.to_s
+      flag = flag.dup.to_s
       flag[0] = '' if flag[0] == '$'
       flag.downcase
     end
