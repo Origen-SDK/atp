@@ -97,6 +97,7 @@ GEM
     rainbow (2.2.2)
       rake
     rake (10.5.0)
+    ripper-tags (0.3.5)
     rspec (3.6.0)
       rspec-core (~> 3.6.0)
       rspec-expectations (~> 3.6.0)
@@ -143,7 +144,8 @@ PLATFORMS
 
 DEPENDENCIES
   atp!
-  byebug (~> 3.5)
+  byebug
+  ripper-tags
 
 BUNDLED WITH
    1.15.4
