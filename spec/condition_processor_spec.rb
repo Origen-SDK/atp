@@ -423,168 +423,201 @@ describe 'The Condition Processor' do
               s(:object, "test4")))))
 
   end
-#
-#  it "test result optimization test 2" do
-#    ast = 
-#      s(:flow,
-#        s(:name, "sort1"),
-#        s(:log, "Test that if_any_failed works"),
-#        s(:test,
-#          s(:object, "test1"),
-#          s(:id, "ifa1")),
-#        s(:test,
-#          s(:object, "test2"),
-#          s(:id, "ifa2")),
-#        s(:test_result, [:ifa1, :ifa2], false,
-#          s(:test,
-#            s(:object, "test3"))),
-#        s(:log, "Test the block form of if_any_failed"),
-#        s(:test,
-#          s(:object, "test1"),
-#          s(:id, "oof_passcode1")),
-#        s(:test,
-#          s(:object, "test2"),
-#          s(:id, "oof_passcode2")),
-#        s(:test_result, [:oof_passcode1, :oof_passcode2], false,
-#          s(:test,
-#            s(:object, "test3"))),
-#        s(:test_result, [:oof_passcode1, :oof_passcode2], false,
-#          s(:test,
-#            s(:object, "test4"))))
-#
-#    p = ATP::Processors::Condition.new
-#    #puts p.process(ast).inspect
-#    ast2 =
-#      s(:flow,
-#        s(:name, "sort1"),
-#        s(:log, "Test that if_any_failed works"),
-#        s(:test,
-#          s(:object, "test1"),
-#          s(:id, "ifa1")),
-#        s(:test,
-#          s(:object, "test2"),
-#          s(:id, "ifa2")),
-#        s(:test_result, [:ifa1, :ifa2], false,
-#          s(:test,
-#            s(:object, "test3"))),
-#        s(:log, "Test the block form of if_any_failed"),
-#        s(:test,
-#          s(:object, "test1"),
-#          s(:id, "oof_passcode1")),
-#        s(:test,
-#          s(:object, "test2"),
-#          s(:id, "oof_passcode2")),
-#        s(:test_result, [:oof_passcode1, :oof_passcode2], false,
-#          s(:test,
-#            s(:object, "test3")),
-#          s(:test,
-#            s(:object, "test4"))))
-#
-#    p.process(ast).should == ast2
-#  end
-#
-#  it "adjacent group optimization test" do
-#    ast = 
-#      s(:flow,
-#        s(:name, "sort1"),
-#        s(:group,
-#          s(:name, "additional_erase"),
-#          s(:flow_flag, "additional_erase", true,
-#            s(:job, ["fr"], true,
-#              s(:test,
-#                s(:object, "erase_all"))))),
-#        s(:group,
-#          s(:name, "additional_erase"),
-#          s(:job, ["fr"], true,
-#            s(:test,
-#              s(:object, "erase_all")))))
-#
-#    p = ATP::Processors::Condition.new
-#    #puts p.process(ast).inspect
-#    ast2 =
-#      s(:flow,
-#        s(:name, "sort1"),
-#        s(:group,
-#          s(:name, "additional_erase"),
-#          s(:job, ["fr"], true,
-#            s(:flow_flag, "additional_erase", true,
-#              s(:test,
-#                s(:object, "erase_all"))),
-#            s(:test,
-#              s(:object, "erase_all")))))
-#
-#    p.process(ast).should == ast2
-#  end
-#
-#  it "Removes duplicate conditions" do
-#    ast = 
-#      s(:flow,
-#        s(:name, "sort1"),
-#        s(:flow_flag, "data_collection", true,
-#          s(:flow_flag, "data_collection", true,
-#            s(:test,
-#              s(:object, "nvm_dist_vcg")))))
-#
-#    p = ATP::Processors::Condition.new
-#    p.process(ast).should == 
-#      s(:flow,
-#        s(:name, "sort1"),
-#        s(:flow_flag, "data_collection", true,
-#          s(:test,
-#            s(:object, "nvm_dist_vcg"))))
-#  end
-#
-#  it "Flags conditions are not optimized when marked as volatile" do
-#    flow = ATP::Program.new.flow(:sort1) 
-#    flow.with_conditions if_flag: "my_flag" do
-#      flow.test :test1, on_fail: { set_flag: "$My_Mixed_Flag", continue: true }
-#      flow.test :test2, conditions: { if_flag: "$My_Mixed_Flag" }
-#      flow.test :test1, conditions: { if_flag: "my_flag" }
-#      flow.test :test2, conditions: { if_flag: "my_flag" }
-#    end
-#
-#    flow.ast.should ==
-#      s(:flow,
-#        s(:name, "sort1"),
-#        s(:run_flag, "my_flag", true,
-#          s(:test,
-#            s(:object, "test1"),
-#            s(:on_fail,
-#              s(:set_run_flag, "$My_Mixed_Flag"),
-#              s(:continue))),
-#          s(:run_flag, "$My_Mixed_Flag", true,
-#            s(:test,
-#              s(:object, "test2"))),
-#          s(:test,
-#            s(:object, "test1")),
-#          s(:test,
-#            s(:object, "test2"))))
-#
-#    flow.volatile "my_flag", :$my_other_flag
-#
-#    flow.ast.should ==
-#      s(:flow,
-#        s(:name, "sort1"),
-#        s(:volatile,
-#          s(:flag, "my_flag"),
-#          s(:flag, "$my_other_flag")),
-#        s(:run_flag, "my_flag", true,
-#          s(:test,
-#            s(:object, "test1"),
-#            s(:on_fail,
-#              s(:set_run_flag, "$My_Mixed_Flag"),
-#              s(:continue)))),
-#        s(:run_flag, "my_flag", true,
-#          s(:run_flag, "$My_Mixed_Flag", true,
-#            s(:test,
-#              s(:object, "test2")))),
-#        s(:run_flag, "my_flag", true,
-#          s(:run_flag, "my_flag", true,
-#            s(:test,
-#              s(:object, "test1")))),
-#        s(:run_flag, "my_flag", true,
-#          s(:run_flag, "my_flag", true,
-#            s(:test,
-#              s(:object, "test2")))))
-#  end
+
+  it "test result optimization test 2" do
+    log "Test that if_any_failed works"
+    test :test1, id: :ifa1
+    test :test2, id: :ifa2
+    test :test3, if_any_failed: [:ifa1, :ifa2]
+    log "Test the block form of if_any_failed"
+    test :test1, id: :oof_passcode1
+    test :test2, id: :oof_passcode2
+    if_any_failed [:oof_passcode1, :oof_passcode2] do
+      test :test3
+    end
+    if_any_failed [:oof_passcode1, :oof_passcode2] do
+      test :test4
+    end
+
+    flow.raw.should == 
+      s(:flow,
+        s(:name, "sort1"),
+        s(:log, "Test that if_any_failed works"),
+        s(:test,
+          s(:object, "test1"),
+          s(:id, "ifa1")),
+        s(:test,
+          s(:object, "test2"),
+          s(:id, "ifa2")),
+        s(:if_any_failed, ["ifa1", "ifa2"],
+          s(:test,
+            s(:object, "test3"))),
+        s(:log, "Test the block form of if_any_failed"),
+        s(:test,
+          s(:object, "test1"),
+          s(:id, "oof_passcode1")),
+        s(:test,
+          s(:object, "test2"),
+          s(:id, "oof_passcode2")),
+        s(:if_any_failed, ["oof_passcode1", "oof_passcode2"],
+          s(:test,
+            s(:object, "test3"))),
+        s(:if_any_failed, ["oof_passcode1", "oof_passcode2"],
+          s(:test,
+            s(:object, "test4"))))
+
+    flow.ast.should == 
+      s(:flow,
+        s(:name, "sort1"),
+        s(:log, "Test that if_any_failed works"),
+        s(:test,
+          s(:object, "test1"),
+          s(:id, "ifa1")),
+        s(:test,
+          s(:object, "test2"),
+          s(:id, "ifa2")),
+        s(:if_any_failed, ["ifa1", "ifa2"],
+          s(:test,
+            s(:object, "test3"))),
+        s(:log, "Test the block form of if_any_failed"),
+        s(:test,
+          s(:object, "test1"),
+          s(:id, "oof_passcode1")),
+        s(:test,
+          s(:object, "test2"),
+          s(:id, "oof_passcode2")),
+        s(:if_any_failed, ["oof_passcode1", "oof_passcode2"],
+          s(:test,
+            s(:object, "test3")),
+          s(:test,
+            s(:object, "test4"))))
+  end
+
+  it "adjacent group optimization test" do
+    group "additional_erase" do
+      if_flag "additional_erase" do
+        test :erase_all, if_job: [:fr]
+      end
+    end
+    group "additional_erase" do
+      test :erase_all, if_job: [:fr]
+    end
+
+    flow.raw.should == 
+      s(:flow,
+        s(:name, "sort1"),
+        s(:group,
+          s(:name, "additional_erase"),
+          s(:if_flag, "additional_erase",
+            s(:if_job, ["fr"],
+              s(:test,
+                s(:object, "erase_all"))))),
+        s(:group,
+          s(:name, "additional_erase"),
+          s(:if_job, ["fr"],
+            s(:test,
+              s(:object, "erase_all")))))
+
+    flow.ast.should == 
+      s(:flow,
+        s(:name, "sort1"),
+        s(:group,
+          s(:name, "additional_erase"),
+          s(:if_job, ["fr"],
+            s(:if_flag, "additional_erase",
+                s(:test,
+                  s(:object, "erase_all"))),
+            s(:test,
+              s(:object, "erase_all")))))
+  end
+
+  it "Removes duplicate conditions" do
+    if_flag :data_collection do
+      test :nvm_dist_vcg, if_flag: :data_collection
+    end
+
+    flow.raw.should == 
+      s(:flow,
+        s(:name, "sort1"),
+        s(:if_flag, "data_collection",
+          s(:if_flag, "data_collection",
+            s(:test,
+              s(:object, "nvm_dist_vcg")))))
+
+    flow.ast.should == 
+      s(:flow,
+        s(:name, "sort1"),
+        s(:if_flag, "data_collection",
+          s(:test,
+            s(:object, "nvm_dist_vcg"))))
+  end
+
+  it "Flags conditions are not optimized when marked as volatile" do
+    if_flag "my_flag" do
+      flow.test :test1, on_fail: { set_flag: "$My_Mixed_Flag", continue: true }
+      flow.test :test2, if_flag: "$My_Mixed_Flag"
+      flow.test :test1, if_flag: "my_flag"
+      flow.test :test2, if_flag: "my_flag"
+    end
+
+    flow.raw.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:if_flag, "my_flag",
+          s(:test,
+            s(:object, "test1"),
+            s(:on_fail,
+              s(:set_flag, "$My_Mixed_Flag"),
+              s(:continue))),
+          s(:if_flag, "$My_Mixed_Flag",
+            s(:test,
+              s(:object, "test2"))),
+          s(:if_flag, "my_flag",
+            s(:test,
+              s(:object, "test1"))),
+          s(:if_flag, "my_flag",
+            s(:test,
+              s(:object, "test2")))))
+
+    flow.ast.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:if_flag, "my_flag",
+          s(:test,
+            s(:object, "test1"),
+            s(:on_fail,
+              s(:set_flag, "$My_Mixed_Flag"),
+              s(:continue))),
+          s(:if_flag, "$My_Mixed_Flag",
+            s(:test,
+              s(:object, "test2"))),
+          s(:test,
+            s(:object, "test1")),
+          s(:test,
+            s(:object, "test2"))))
+
+    flow.volatile "my_flag", :$my_other_flag
+
+    flow.ast.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:volatile,
+          s(:flag, "my_flag"),
+          s(:flag, "$my_other_flag")),
+        s(:if_flag, "my_flag",
+          s(:test,
+            s(:object, "test1"),
+            s(:on_fail,
+              s(:set_flag, "$My_Mixed_Flag"),
+              s(:continue))),
+          s(:if_flag, "$My_Mixed_Flag",
+            s(:test,
+              s(:object, "test2"))),
+          s(:if_flag, "my_flag",
+            s(:test,
+              s(:object, "test1"))),
+          s(:if_flag, "my_flag",
+            s(:test,
+              s(:object, "test2")))))
+  end
 end

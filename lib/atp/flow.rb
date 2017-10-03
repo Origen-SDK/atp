@@ -162,11 +162,11 @@ module ATP
         end
         if f = options.delete(:flag_pass)
           options[:on_pass] ||= {}
-          options[:on_pass][:set_run_flag] = f
+          options[:on_pass][:set_flag] = f
         end
         if f = options.delete(:flag_fail)
           options[:on_fail] ||= {}
-          options[:on_fail][:set_run_flag] = f
+          options[:on_fail][:set_flag] = f
         end
 
         children = [n(:object, instance)]
@@ -498,7 +498,7 @@ module ATP
           children << set_result(:fail, fail_opts)
         end
         if options[:set_run_flag] || options[:set_flag]
-          children << set_run_flag(options[:set_run_flag] || options[:set_flag])
+          children << set_flag(options[:set_run_flag] || options[:set_flag])
         end
         children << n0(:continue) if options[:continue]
         children << render(options[:render]) if options[:render]
@@ -519,7 +519,7 @@ module ATP
           children << set_result(:pass, pass_opts)
         end
         if options[:set_run_flag] || options[:set_flag]
-          children << set_run_flag(options[:set_run_flag] || options[:set_flag])
+          children << set_flag(options[:set_run_flag] || options[:set_flag])
         end
         children << n0(:continue) if options[:continue]
         children << render(options[:render]) if options[:render]
@@ -577,6 +577,28 @@ module ATP
 
     def number(val)
       n(:number, val.to_i)
+    end
+
+    def set_flag(flag)
+      n(:set_flag, flag)
+    end
+
+    # Ensures the flow ast has a volatile node, then adds the
+    # given flags to it
+    def add_volatile_flags(node, flags)
+      name, *nodes = *node
+      if nodes[0] && nodes[0].type == :volatile
+        v = nodes.shift
+      else
+        v = n0(:volatile)
+      end
+      existing = v.children.map { |f| f.type == :flag ? f.value : nil }.compact
+      new = []
+      flags.each do |flag|
+        new << n(:flag, flag) unless existing.include?(flag)
+      end
+      v = v.updated(nil, v.children + new)
+      node.updated(nil, [name, v] + nodes)
     end
   end
 end

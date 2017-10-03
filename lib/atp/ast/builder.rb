@@ -3,17 +3,6 @@ module ATP
     class Builder
       include Factories
 
-      attr_reader :context, :flow
-
-      def initialize(flow)
-        @flow = flow
-        @context = { conditions: [] }
-      end
-
-      def top_level(str)
-        n(:flow, name(str))
-      end
-
       # Ensures the given flow ast has a volatile node, then adds the
       # given flags to it
       def add_volatile_flags(flow, flags)
@@ -30,34 +19,6 @@ module ATP
         end
         v = v.updated(nil, v.children + new)
         flow.updated(nil, [name, v] + nodes)
-      end
-
-      def name(str)
-        n(:name, str.to_s)
-      end
-
-      def id(symbol)
-        n(:id, symbol.to_sym)
-      end
-
-      def test_result(id, passed, node)
-        n(:test_result, id, passed, node)
-      end
-
-      def test_executed(id, executed, node)
-        n(:test_executed, id, executed, node)
-      end
-
-      def job(id, enabled, node)
-        n(:job, id, enabled, node)
-      end
-
-      def run_flag(id, enabled, node)
-        n(:run_flag, id, enabled, node)
-      end
-
-      def set_run_flag(flag)
-        n(:set_run_flag, flag)
       end
 
       def new_context
