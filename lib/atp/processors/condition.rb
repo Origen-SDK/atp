@@ -48,33 +48,6 @@ module ATP
         node.updated(nil, optimize(process_all(node.children)))
       end
 
-      def on_flow_flag(node)
-        flag, state, *nodes = *node
-        if conditions_to_remove.any? { |c| node.type == c.type && c.to_a == [flag, state] }
-          if volatile?(flag)
-            result = n(:inline, optimize(process_all(nodes)))
-          else
-            # This ensures any duplicate conditions matching the current one get removed
-            conditions_to_remove << node.updated(nil, [flag, state])
-            result = n(:inline, optimize(process_all(nodes)))
-            conditions_to_remove.pop
-          end
-        else
-          if volatile?(flag)
-            result = node.updated(nil, [flag, state] + optimize(process_all(nodes)))
-          else
-            conditions_to_remove << node.updated(nil, [flag, state])
-            result = node.updated(nil, [flag, state] + optimize(process_all(nodes)))
-            conditions_to_remove.pop
-          end
-        end
-        result
-      end
-      alias_method :on_test_result, :on_flow_flag
-      alias_method :on_job, :on_flow_flag
-      alias_method :on_run_flag, :on_flow_flag
-      alias_method :on_test_executed, :on_flow_flag
-
       def on_group(node)
         name, *nodes = *node
         if conditions_to_remove.any? { |c| node.type == c.type && c.to_a == [name] }
@@ -87,6 +60,32 @@ module ATP
           conditions_to_remove.pop
         end
         result
+      end
+
+      def on_condition_node(node)
+        flag, *nodes = *node
+        if conditions_to_remove.any? { |c| node.type == c.type && c.to_a == [flag] }
+          if volatile?(flag)
+            result = n(:inline, optimize(process_all(nodes)))
+          else
+            # This ensures any duplicate conditions matching the current one get removed
+            conditions_to_remove << node.updated(nil, [flag])
+            result = n(:inline, optimize(process_all(nodes)))
+            conditions_to_remove.pop
+          end
+        else
+          if volatile?(flag)
+            result = node.updated(nil, [flag] + optimize(process_all(nodes)))
+          else
+            conditions_to_remove << node.updated(nil, [flag])
+            result = node.updated(nil, [flag] + optimize(process_all(nodes)))
+            conditions_to_remove.pop
+          end
+        end
+        result
+      end
+      ATP::Flow::CONDITION_NODE_TYPES.each do |type|
+        alias_method "on_#{type}", :on_condition_node unless method_defined?("on_#{type}")
       end
 
       def optimize(nodes)
@@ -117,8 +116,8 @@ module ATP
       end
 
       def condition_node?(node)
-        node.respond_to?(:type) &&
-          [:flow_flag, :run_flag, :test_result, :group, :job, :test_executed].include?(node.type)
+        # [:flow_flag, :run_flag, :test_result, :group, :job, :test_executed].include?(node.type)
+        node.respond_to?(:type) && ATP::Flow::CONDITION_KEYS[node.type]
       end
 
       def combine(node1, node2)
@@ -143,16 +142,14 @@ module ATP
 
       def conditions(node)
         result = []
-        if [:flow_flag, :run_flag].include?(node.type)
-          flag, state, *children = *node
+        # if [:flow_flag, :run_flag].include?(node.type)
+        if [:if_enabled, :unless_enabled, :if_flag, :unless_flag].include?(node.type)
+          flag, *children = *node
           unless volatile?(flag)
-            result << node.updated(nil, [flag, state])
+            result << node.updated(nil, [flag])
           end
           result += conditions(children.first) if children.first
-        elsif [:test_result, :job, :test_executed].include?(node.type)
-          flag, state, *children = *node
-          result << node.updated(nil, [flag, state])
-          result += conditions(children.first) if children.first
+        # elsif [:test_result, :job, :test_executed].include?(node.type)
         elsif node.type == :group
           name, *children = *node
           # Sometimes a group can have an ID
@@ -161,6 +158,10 @@ module ATP
           else
             result << node.updated(nil, [name])
           end
+          result += conditions(children.first) if children.first
+        elsif ATP::Flow::CONDITION_KEYS[node.type]
+          flag, *children = *node
+          result << node.updated(nil, [flag])
           result += conditions(children.first) if children.first
         end
         result

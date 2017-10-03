@@ -9,6 +9,7 @@ module ATP
   autoload :Runner, 'atp/runner'
   autoload :Formatter, 'atp/formatter'
   autoload :Parser, 'atp/parser'
+  autoload :FlowAPI, 'atp/flow_api'
 
   module AST
     autoload :Node, 'atp/ast/node'
