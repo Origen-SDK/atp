@@ -1,9 +1,14 @@
 require 'spec_helper'
 
 describe 'Test nodes' do
+  include ATP::FlowAPI
+
+  before :each do
+    self.flow = ATP::Program.new.flow(:sort1) 
+  end
+
   it "can capture limit information" do
-    flow = ATP::Program.new.flow(:sort1) 
-    flow.test :test1, limits: [{ value: 5, rule: :lte}, { value: 1, rule: :gt, units: :mV }]
+    test :test1, limits: [{ value: 5, rule: :lte}, { value: 1, rule: :gt, units: :mV }]
 
     flow.ast.should ==
        s(:flow,
@@ -15,9 +20,8 @@ describe 'Test nodes' do
   end
 
   it "can capture target pin information" do
-    flow = ATP::Program.new.flow(:sort1) 
-    flow.test :test1, pin: { name: :pinx }
-    flow.test :test2, pins: [{ name: :pinx}, { name: :piny}]
+    test :test1, pin: { name: :pinx }
+    test :test2, pins: [{ name: :pinx}, { name: :piny}]
 
     flow.ast.should ==
        s(:flow,
@@ -32,9 +36,8 @@ describe 'Test nodes' do
   end
 
   it "can include level information" do
-    flow = ATP::Program.new.flow(:sort1) 
-    flow.test :test1, level: { name: :vdd, value: 1.5 }
-    flow.test :test2, levels: [{ name: :vdd, value: 1.1}, { name: :vddc, value: 700, units: :mV}]
+    test :test1, level: { name: :vdd, value: 1.5 }
+    test :test2, levels: [{ name: :vdd, value: 1.1}, { name: :vddc, value: 700, units: :mV}]
 
     flow.ast.should ==
        s(:flow,
@@ -49,8 +52,8 @@ describe 'Test nodes' do
   end
 
   it "can include arbitrary attributes/meta data" do
-    flow = ATP::Program.new.flow(:sort1) 
-    flow.test :test1, meta: { frequency: 25, cz: true }
+    test :test1, meta: { frequency: 25, cz: true }
+
     flow.ast.should ==
        s(:flow,
          s(:name, "sort1"),
@@ -62,8 +65,7 @@ describe 'Test nodes' do
   end
 
   it "bin nodes can include a description" do
-    flow = ATP::Program.new.flow(:sort1) 
-    flow.test :test1, bin: 5, bin_description: "This is bad news"
+    test :test1, bin: 5, bin_description: "This is bad news"
 
     flow.ast.should ==
        s(:flow,
@@ -76,9 +78,8 @@ describe 'Test nodes' do
   end
 
   it "can capture a list of patterns" do
-    flow = ATP::Program.new.flow(:sort1) 
-    flow.test :test1, pattern: "my_pattern"
-    flow.test :test2, patterns: ["my_pat1", { name: "my_pat2", path: "production/flash" }]
+    test :test1, pattern: "my_pattern"
+    test :test2, patterns: ["my_pat1", { name: "my_pat2", path: "production/flash" }]
 
     flow.ast.should ==
        s(:flow,
@@ -93,11 +94,10 @@ describe 'Test nodes' do
   end
 
   it "can include sub-tests" do
-    flow = ATP::Program.new.flow(:sort1) 
-    flow.test :test1, 
+    test :test1, 
       sub_tests: [
-        flow.sub_test(:test1_s1, limits: [{ value: 5, rule: :lte}, { value: 1, rule: :gt, units: :mV }]),
-        flow.sub_test(:test1_s2, bin: 10),
+        sub_test(:test1_s1, limits: [{ value: 5, rule: :lte}, { value: 1, rule: :gt, units: :mV }]),
+        sub_test(:test1_s2, bin: 10),
     ]
 
     flow.ast.should ==

@@ -252,12 +252,11 @@ module ATP
     end
 
     # Equivalent to calling test, but returns a sub_test node instead of adding it to the flow.
-    # It will also ignore any condition nodes that would normally wrap the equivalent flow.test call.
     #
     # This is a helper to create sub_tests for inclusion in a top-level test node.
     def sub_test(instance, options = {})
-      options[:ignore_all_conditions] = true
-      test(instance, options)
+      temp = append_to(n0(:temp)) { test(instance, options) }
+      temp.children.first.updated(:sub_test, nil)
     end
 
     def bin(number, options = {})
