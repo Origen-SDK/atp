@@ -13,7 +13,9 @@ module ATP
         if node.find(:name)
           @output += node.find(:name).value
         else
-          @output += node.find(:object).value['Test']
+          obj = node.find(:object).value
+          obj = obj['Test'] unless obj.is_a?(String)
+          @output += obj
         end
         @output += ' F' if node.find(:failed)
         @output += "\n"

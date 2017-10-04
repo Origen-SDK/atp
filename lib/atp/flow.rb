@@ -88,7 +88,9 @@ module ATP
     # used to build and represent the given test flow
     def ast(options = {})
       options = {
-        apply_relationships: true
+        apply_relationships: true,
+        # Supply a unique ID to append to all IDs
+        unique_id:           nil
       }.merge(options)
       ast = Processors::PreCleaner.new.run(raw)
       Validators::DuplicateIDs.new(self).run(ast)

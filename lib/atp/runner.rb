@@ -6,8 +6,8 @@ module ATP
   class Runner < Processor
     def run(node, options = {})
       options = {
-        evaluate_flow_flags: true,
-        evaluate_run_flags:  true,
+        evaluate_enables:    true,
+        evaluate_flags:      true,
         evaluate_set_result: true
       }.merge(options)
       @options = options
@@ -31,11 +31,12 @@ module ATP
       container << node
     end
 
-    def on_flow_flag(node)
-      if @options[:evaluate_flow_flags]
-        flag, enabled, *nodes = *node
+    def on_if_flag(node)
+      if @options[:evaluate_flags]
+        flag, *nodes = *node
         flag = [flag].flatten
-        active = flag.any? { |f| flow_flags.include?(f) }
+        enabled = node.type == :if_flag
+        active = flag.any? { |f| set_flags.include?(f) }
         if (enabled && active) || (!enabled && !active)
           process_all(nodes)
         end
@@ -43,15 +44,17 @@ module ATP
         c = open_container do
           process_all(node.children)
         end
-        container << node.updated(nil, node.children.take(2) + c)
+        container << node.updated(nil, node.children.take(1) + c)
       end
     end
+    alias_method :on_unless_flag, :on_if_flag
 
-    def on_run_flag(node)
-      if @options[:evaluate_run_flags]
-        flag, enabled, *nodes = *node
+    def on_if_enabled(node)
+      if @options[:evaluate_enables]
+        flag, *nodes = *node
         flag = [flag].flatten
-        active = flag.any? { |f| run_flags.include?(f) }
+        enabled = node.type == :if_enabled
+        active = flag.any? { |f| set_enables.include?(f) }
         if (enabled && active) || (!enabled && !active)
           process_all(nodes)
         end
@@ -59,16 +62,21 @@ module ATP
         c = open_container do
           process_all(node.children)
         end
-        container << node.updated(nil, node.children.take(2) + c)
+        container << node.updated(nil, node.children.take(1) + c)
+      end
+    end
+    alias_method :on_unless_enabled, :on_if_enabled
+
+    def on_if_failed(node)
+      id, *nodes = *node
+      if failed_test_ids.include?(id)
+        process_all(nodes)
       end
     end
 
-    # Not sure why this method is here, all test_result nodes should have been
-    # converted to run_flag nodes by now
-    def on_test_result(node)
-      id, passed, *nodes = *node
-      if (passed && !failed_test_ids.include?(id)) ||
-         (!passed && failed_test_ids.include?(id))
+    def on_if_passed(node)
+      id, *nodes = *node
+      unless failed_test_ids.include?(id)
         process_all(nodes)
       end
     end
@@ -155,16 +163,16 @@ module ATP
       end
     end
 
-    def on_set_run_flag(node)
-      run_flags << node.to_a[0]
+    def on_set_flag(node)
+      set_flags << node.to_a[0]
     end
 
-    def on_enable_flow_flag(node)
-      flow_flags << node.value unless flow_flags.include?(node.value)
+    def on_enable(node)
+      set_enables << node.value unless set_enables.include?(node.value)
     end
 
-    def on_disable_flow_flag(node)
-      flow_flags.delete(node.value)
+    def on_disable(node)
+      set_enables.delete(node.value)
     end
 
     def on_log(node)
@@ -172,9 +180,10 @@ module ATP
     end
     alias_method :on_render, :on_log
 
-    def on_job(node)
-      jobs, state, *nodes = *node
+    def on_if_job(node)
+      jobs, *nodes = *node
       jobs = clean_job(jobs)
+      state = node.type == :if_job
       unless job
         fail 'Flow contains JOB-based conditions and no current JOB has been given!'
       end
@@ -184,6 +193,7 @@ module ATP
         process_all(node) unless jobs.include?(job)
       end
     end
+    alias_method :on_unless_job, :on_if_job
 
     def clean_job(job)
       [job].flatten.map { |j| j.to_s.upcase }
@@ -197,13 +207,13 @@ module ATP
       @failed_test_ids ||= [@options[:failed_test_id] || @options[:failed_test_ids]].flatten.compact
     end
 
-    def run_flags
-      @run_flags ||= []
+    def set_flags
+      @set_flags ||= []
     end
 
     # Returns an array of enabled flow flags
-    def flow_flags
-      @flow_flags ||= [@options[:flow_flag] || @options[:flow_flags]].flatten.compact
+    def set_enables
+      @set_enables ||= [@options[:enable] || @options[:enables]].flatten.compact
     end
 
     def completed?
