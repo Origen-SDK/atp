@@ -87,15 +87,18 @@ module ATP
 
     # Returns a processed/optimized AST, this is the one that should be
     # used to build and represent the given test flow
-    def ast
-      ast = Processors::PreCleaner.new.process(raw)
+    def ast(options = {})
+      options = {
+        apply_relationships: true
+      }.merge(options)
+      ast = Processors::PreCleaner.new.run(raw)
       ast = Processors::FlowID.new.run(ast, id) if id
-      Validators::DuplicateIDs.new(self).process(ast)
-      Validators::MissingIDs.new(self).process(ast)
-      ast = Processors::Condition.new.process(ast)
-      ast = Processors::Relationship.new.process(ast)
-      ast = Processors::PostCleaner.new.process(ast)
-      Validators::Jobs.new(self).process(ast)
+      Validators::DuplicateIDs.new(self).run(ast)
+      Validators::MissingIDs.new(self).run(ast)
+      ast = Processors::Relationship.new.run(ast) if options[:apply_relationships]
+      ast = Processors::Condition.new.run(ast)
+      ast = Processors::PostCleaner.new.run(ast)
+      Validators::Jobs.new(self).run(ast)
       ast
     end
 

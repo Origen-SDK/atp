@@ -26,7 +26,7 @@ describe 'The Condition Processor' do
             s(:test,
               s(:object, "test3")))))
 
-    flow.ast.should ==
+    flow.ast(apply_relationships: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -67,7 +67,7 @@ describe 'The Condition Processor' do
               s(:test,
                 s(:object, "test4"))))))
 
-    flow.ast.should ==
+    flow.ast(apply_relationships: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -117,7 +117,7 @@ describe 'The Condition Processor' do
               s(:test,
                 s(:object, "test4"))))))
 
-    flow.ast.should ==
+    flow.ast(apply_relationships: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -172,7 +172,7 @@ describe 'The Condition Processor' do
                 s(:test,
                   s(:object, "test4")))))))
 
-    flow.ast.should ==
+    flow.ast(apply_relationships: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:group,
@@ -224,7 +224,7 @@ describe 'The Condition Processor' do
                   s(:object, "test4")))))))
 
 
-    flow.ast.should ==
+    flow.ast(apply_relationships: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:if_job, "p1",
@@ -272,7 +272,7 @@ describe 'The Condition Processor' do
           s(:test,
             s(:object, "test7"))))
 
-    flow.ast.should ==
+    flow.ast(apply_relationships: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:if_job, ["p1", "p2"],
@@ -323,7 +323,7 @@ describe 'The Condition Processor' do
           s(:test,
             s(:object, "test6"))))
 
-    flow.ast.should ==
+    flow.ast(apply_relationships: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:if_job, ["p1", "p2"],
@@ -393,7 +393,7 @@ describe 'The Condition Processor' do
             s(:test,
               s(:object, "test4")))))
 
-    flow.ast.should ==
+    flow.ast(apply_relationships: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -466,7 +466,7 @@ describe 'The Condition Processor' do
           s(:test,
             s(:object, "test4"))))
 
-    flow.ast.should == 
+    flow.ast(apply_relationships: false).should == 
       s(:flow,
         s(:name, "sort1"),
         s(:log, "Test that if_any_failed works"),
@@ -518,7 +518,7 @@ describe 'The Condition Processor' do
             s(:test,
               s(:object, "erase_all")))))
 
-    flow.ast.should == 
+    flow.ast(apply_relationships: false).should == 
       s(:flow,
         s(:name, "sort1"),
         s(:group,
@@ -544,7 +544,7 @@ describe 'The Condition Processor' do
             s(:test,
               s(:object, "nvm_dist_vcg")))))
 
-    flow.ast.should == 
+    flow.ast(apply_relationships: false).should == 
       s(:flow,
         s(:name, "sort1"),
         s(:if_flag, "data_collection",
@@ -579,7 +579,7 @@ describe 'The Condition Processor' do
             s(:test,
               s(:object, "test2")))))
 
-    flow.ast.should ==
+    flow.ast(apply_relationships: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:if_flag, "my_flag",
@@ -598,7 +598,7 @@ describe 'The Condition Processor' do
 
     flow.volatile "my_flag", :$my_other_flag
 
-    flow.ast.should ==
+    flow.ast(apply_relationships: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:volatile,

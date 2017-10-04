@@ -1,11 +1,15 @@
 require 'spec_helper'
 
 describe 'The base processor' do
+  include ATP::FlowAPI
+
+  before :each do
+    self.flow = ATP::Program.new.flow(:sort1) 
+  end
 
   it "returns the same AST" do
-    flow = ATP::Program.new.flow(:sort1) 
-    flow.test :test1, on_fail: { bin: 5 }
-    flow.test :test2, on_fail: { bin: 6, continue: true }
+    test :test1, on_fail: { bin: 5 }
+    test :test2, on_fail: { bin: 6, continue: true }
     ATP::Processor.new.process(flow.raw).should == flow.raw
   end
 

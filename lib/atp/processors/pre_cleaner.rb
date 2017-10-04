@@ -15,12 +15,18 @@ module ATP
       end
 
       # Make all ID references use the lower case symbols
-      def on_test_executed(node)
+      def on_if_failed(node)
         children = node.children.dup
         children[0] = clean(children[0])
         node.updated(nil, process_all(children))
       end
-      alias_method :on_test_result, :on_test_executed
+      alias_method :on_if_passed, :on_if_failed
+      alias_method :on_any_failed, :on_if_failed
+      alias_method :on_all_failed, :on_if_failed
+      alias_method :on_any_passed, :on_if_failed
+      alias_method :on_all_passed, :on_if_failed
+      alias_method :on_if_ran, :on_if_failed
+      alias_method :on_unless_ran, :on_if_failed
 
       def on_group(node)
         if id = node.children.find { |n| n.type == :id }
