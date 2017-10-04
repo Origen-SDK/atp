@@ -91,7 +91,6 @@ module ATP
         apply_relationships: true
       }.merge(options)
       ast = Processors::PreCleaner.new.run(raw)
-
       Validators::DuplicateIDs.new(self).run(ast)
       Validators::MissingIDs.new(self).run(ast)
 

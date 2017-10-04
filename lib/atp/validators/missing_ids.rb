@@ -11,21 +11,21 @@ module ATP
         failed = false
         @referenced_ids.each do |id, nodes|
           unless @present_ids[id]
-            Origen.log.error "Test ID #{id} is referenced in flow #{flow.name} in the following lines, but it is never defined:"
+            error "Test ID #{id} is referenced in flow #{flow.name} in the following lines, but it is never defined:"
             nodes.each do |node|
-              Origen.log.error "  #{node.source}"
+              error "  #{node.source}"
             end
             failed = true
             @referenced_early.delete(id)
           end
         end
         @referenced_early.each do |id, nodes|
-          Origen.log.error "Test ID #{id} is referenced in flow #{flow.name} in the following line(s):"
+          error "Test ID #{id} is referenced in flow #{flow.name} in the following line(s):"
           nodes.each do |node|
-            Origen.log.error "  #{node.source}"
+            error "  #{node.source}"
           end
-          Origen.log.error 'but it was not defined until later:'
-          Origen.log.error "  #{@present_ids[id].first.source}"
+          error 'but it was not defined until later:'
+          error "  #{@present_ids[id].first.source}"
           failed = true
         end
         failed
@@ -37,7 +37,7 @@ module ATP
         @present_ids[id] << node
       end
 
-      def on_test_executed(node)
+      def on_if_failed(node)
         ids = node.to_a[0]
         [ids].flatten.each do |id|
           unless id =~ /^extern/
@@ -51,7 +51,13 @@ module ATP
         end
         process_all(node)
       end
-      alias_method :on_test_result, :on_test_executed
+      alias_method :on_if_any_failed, :on_if_failed
+      alias_method :on_if_all_failed, :on_if_failed
+      alias_method :on_if_passed, :on_if_failed
+      alias_method :on_if_any_passed, :on_if_failed
+      alias_method :on_if_all_passed, :on_if_failed
+      alias_method :on_if_ran, :on_if_failed
+      alias_method :on_unless_ran, :on_if_failed
     end
   end
 end

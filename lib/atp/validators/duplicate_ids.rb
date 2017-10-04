@@ -4,9 +4,9 @@ module ATP
       def on_completion
         if @duplicate_ids
           @duplicate_ids.each do |id, nodes|
-            Origen.log.error "Test ID #{id} is defined more than once in flow #{flow.name}:"
+            error "Test ID #{id} is defined more than once in flow #{flow.name}:"
             nodes.each do |node|
-              Origen.log.error "  #{node.source}"
+              error "  #{node.source}"
             end
           end
           true
