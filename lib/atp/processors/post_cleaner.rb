@@ -20,20 +20,11 @@ module ATP
         end
       end
 
-      def process(node)
-        # On first call extract the test_result nodes from the given AST,
-        # then process as normal thereafter
-        if @first_call_done
-          result = super
-        else
-          @first_call_done = true
-          t = ExtractTestIDs.new
-          t.process(node)
-          @ids = t.results || {}
-          result = super
-          @first_call_done = false
-        end
-        result
+      def run(node)
+        t = ExtractTestIDs.new
+        t.process(node)
+        @ids = t.results || {}
+        process(node)
       end
 
       def on_test(node)

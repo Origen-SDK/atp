@@ -1,8 +1,8 @@
 module ATP
   module Processors
     # Modifies the AST by performing some basic clean up, mainly to sanitize
-    # user input. For example it will ensure that all IDs are symbols, and that
-    # all names are lower-cased strings.
+    # user input. For example it will ensure that all IDs and references are underscored
+    # and lower cased.
     class PreCleaner < Processor
       def initialize
         @group_ids = []
@@ -16,15 +16,14 @@ module ATP
 
       # Make all ID references use the lower case symbols
       def on_if_failed(node)
-        children = node.children.dup
-        children[0] = clean(children[0])
-        node.updated(nil, process_all(children))
+        id, *children = *node
+        node.updated(nil, [clean(id)] + process_all(children))
       end
       alias_method :on_if_passed, :on_if_failed
-      alias_method :on_any_failed, :on_if_failed
-      alias_method :on_all_failed, :on_if_failed
-      alias_method :on_any_passed, :on_if_failed
-      alias_method :on_all_passed, :on_if_failed
+      alias_method :on_if_any_failed, :on_if_failed
+      alias_method :on_if_all_failed, :on_if_failed
+      alias_method :on_if_any_passed, :on_if_failed
+      alias_method :on_if_all_passed, :on_if_failed
       alias_method :on_if_ran, :on_if_failed
       alias_method :on_unless_ran, :on_if_failed
 
@@ -57,7 +56,7 @@ module ATP
         if id.is_a?(Array)
           id.map { |i| clean(i) }
         else
-          id.to_s.downcase.to_sym
+          id.to_s.symbolize.to_s
         end
       end
     end

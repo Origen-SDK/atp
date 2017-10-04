@@ -71,7 +71,7 @@ describe 'The flow builder API' do
           s(:id, :t1)),
         s(:test,
           s(:object, "test2"),
-          s(:id, :t2)),
+          s(:id, "T2")),
         s(:if_enabled, "bitmap",
           s(:test,
             s(:object, "test3"))),

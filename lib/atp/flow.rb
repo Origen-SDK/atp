@@ -5,7 +5,6 @@ module ATP
     attr_reader :program, :name
     # Returns the raw AST
     attr_reader :raw
-    attr_accessor :id
 
     attr_accessor :source_file, :source_line_number, :description
 
@@ -92,9 +91,12 @@ module ATP
         apply_relationships: true
       }.merge(options)
       ast = Processors::PreCleaner.new.run(raw)
-      ast = Processors::FlowID.new.run(ast, id) if id
+
       Validators::DuplicateIDs.new(self).run(ast)
       Validators::MissingIDs.new(self).run(ast)
+
+      ast = Processors::FlowID.new.run(ast, options[:unique_id]) if options[:unique_id]
+
       ast = Processors::Relationship.new.run(ast) if options[:apply_relationships]
       ast = Processors::Condition.new.run(ast)
       ast = Processors::PostCleaner.new.run(ast)
@@ -121,7 +123,7 @@ module ATP
       extract_meta!(options)
       apply_conditions(options) do
         children = [n(:name, name)]
-        children << id_node(options[:id]) if options[:id]
+        children << id(options[:id]) if options[:id]
         children << on_fail(options[:on_fail]) if options[:on_fail]
         children << on_pass(options[:on_pass]) if options[:on_pass]
         g = n(:group, *children)
@@ -190,7 +192,7 @@ module ATP
         end
         children << number(num) if num
 
-        children << id_node(options[:id].to_s.downcase.to_sym) if options[:id]
+        children << id(options[:id]) if options[:id]
 
         if levels = options[:level] || options[:levels]
           levels = [levels] unless levels.is_a?(Array)
@@ -375,7 +377,6 @@ module ATP
 
     def flow_control_method(name, flag, options = {}, &block)
       extract_meta!(options)
-      flag = flag.is_a?(Array) ? flag.map(&:to_s) : flag.to_s
       apply_conditions(options) do
         if block
           node = n(name, flag)
@@ -436,7 +437,6 @@ module ATP
         if key == :group
           node = n(key, n(:name, value.to_s), node)
         else
-          value = value.is_a?(Array) ? value.map(&:to_s) : value.to_s
           node = n(key, value, node)
         end
       end
@@ -484,8 +484,8 @@ module ATP
       end
     end
 
-    def id_node(name)
-      n(:id, name.to_s.downcase.to_sym)
+    def id(name)
+      n(:id, name)
     end
 
     def on_fail(options = {})

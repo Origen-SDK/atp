@@ -128,7 +128,7 @@ describe 'The Relationship Processor' do
         s(:test,
           s(:object, "test2"),
           s(:id, "t2")),
-        s(:if_any_failed, ["t1", "t2"],
+        s(:if_any_failed, [:t1, :t2],
           s(:test,
             s(:object, "test3"))))
 

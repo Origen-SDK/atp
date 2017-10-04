@@ -242,13 +242,13 @@ describe 'The Condition Processor' do
   end
 
   it "job optimization test 2" do
-    test :test1, if_job: [:p1, :p2]
+    test :test1, if_job: ["p1", "p2"]
     test :test2
-    test :test3, if_job: [:p1, :p2]
+    test :test3, if_job: ["p1", "p2"]
     test :test4
-    test :test5, if_job: [:p1, :p2]
+    test :test5, if_job: ["p1", "p2"]
     test :test6
-    test :test7, if_job: [:p1, :p2]
+    test :test7, if_job: ["p1", "p2"]
 
     flow.raw.should ==
       s(:flow,
@@ -296,12 +296,12 @@ describe 'The Condition Processor' do
   end
 
   it "job optimization test 3" do
-    test :test1, if_job: [:p1, :p2]
+    test :test1, if_job: ["p1", "p2"]
     test :test2
-    test :test3, if_job: [:p1, :p2]
-    test :test4, if_job: [:p1, :p2]
+    test :test3, if_job: ["p1", "p2"]
+    test :test4, if_job: ["p1", "p2"]
     test :test5
-    test :test6, if_job: [:p1, :p2]
+    test :test6, if_job: ["p1", "p2"]
 
     flow.raw.should ==
       s(:flow,
@@ -449,7 +449,7 @@ describe 'The Condition Processor' do
         s(:test,
           s(:object, "test2"),
           s(:id, "ifa2")),
-        s(:if_any_failed, ["ifa1", "ifa2"],
+        s(:if_any_failed, [:ifa1, :ifa2],
           s(:test,
             s(:object, "test3"))),
         s(:log, "Test the block form of if_any_failed"),
@@ -459,10 +459,10 @@ describe 'The Condition Processor' do
         s(:test,
           s(:object, "test2"),
           s(:id, "oof_passcode2")),
-        s(:if_any_failed, ["oof_passcode1", "oof_passcode2"],
+        s(:if_any_failed, [:oof_passcode1, :oof_passcode2],
           s(:test,
             s(:object, "test3"))),
-        s(:if_any_failed, ["oof_passcode1", "oof_passcode2"],
+        s(:if_any_failed, [:oof_passcode1, :oof_passcode2],
           s(:test,
             s(:object, "test4"))))
 
@@ -496,11 +496,11 @@ describe 'The Condition Processor' do
   it "adjacent group optimization test" do
     group "additional_erase" do
       if_flag "additional_erase" do
-        test :erase_all, if_job: [:fr]
+        test :erase_all, if_job: ["fr"]
       end
     end
     group "additional_erase" do
-      test :erase_all, if_job: [:fr]
+      test :erase_all, if_job: ["fr"]
     end
 
     flow.raw.should == 
