@@ -171,21 +171,21 @@ module ATP
 
         children = [n(:object, instance)]
 
-        n = (options[:name] || options[:tname] || options[:test_name])
-        unless n
+        name = (options[:name] || options[:tname] || options[:test_name])
+        unless name
           [:name, :tname, :test_name].each do |m|
-            n ||= instance.respond_to?(m) ? instance.send(m) : nil
+            name ||= instance.respond_to?(m) ? instance.send(m) : nil
           end
         end
-        children << name(n) if n
+        children << n(:name, name) if name
 
-        n = (options[:number] || options[:num] || options[:tnum] || options[:test_number])
-        unless n
+        num = (options[:number] || options[:num] || options[:tnum] || options[:test_number])
+        unless num
           [:number, :num, :tnum, :test_number].each do |m|
-            n ||= instance.respond_to?(m) ? instance.send(m) : nil
+            num ||= instance.respond_to?(m) ? instance.send(m) : nil
           end
         end
-        children << number(n) if n
+        children << number(num) if num
 
         children << id_node(options[:id].to_s.downcase.to_sym) if options[:id]
 

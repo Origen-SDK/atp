@@ -13,7 +13,6 @@ module ATP
 
   module AST
     autoload :Node, 'atp/ast/node'
-    autoload :Builder, 'atp/ast/builder'
     autoload :Factories, 'atp/ast/factories'
     autoload :Extractor, 'atp/ast/extractor'
   end
