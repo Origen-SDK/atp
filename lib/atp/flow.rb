@@ -95,12 +95,9 @@ module ATP
       ast = Processors::PreCleaner.new.run(raw)
       Validators::DuplicateIDs.new(self).run(ast)
       Validators::MissingIDs.new(self).run(ast)
-
       ast = Processors::FlowID.new.run(ast, options[:unique_id]) if options[:unique_id]
-
       ast = Processors::Relationship.new.run(ast) if options[:apply_relationships]
       ast = Processors::Condition.new.run(ast)
-      ast = Processors::PostCleaner.new.run(ast)
       Validators::Jobs.new(self).run(ast)
       ast
     end

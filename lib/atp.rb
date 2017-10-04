@@ -23,7 +23,6 @@ module ATP
     autoload :Condition,    'atp/processors/condition'
     autoload :Relationship, 'atp/processors/relationship'
     autoload :PreCleaner, 'atp/processors/pre_cleaner'
-    autoload :PostCleaner, 'atp/processors/post_cleaner'
     autoload :Marshal, 'atp/processors/marshal'
     autoload :AddIDs, 'atp/processors/add_ids'
     autoload :AddSetResult, 'atp/processors/add_set_result'

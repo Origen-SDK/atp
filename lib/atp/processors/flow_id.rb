@@ -17,8 +17,8 @@ module ATP
         end
       end
 
-      def on_test_result(node)
-        tid, state, nodes = *node
+      def on_if_failed(node)
+        tid, nodes = *node
         if tid.is_a?(Array)
           tid = tid.map do |tid|
             if tid =~ /^extern/
@@ -32,9 +32,15 @@ module ATP
             tid = "#{tid}_#{id}"
           end
         end
-        node.updated(nil, [tid, state] + [process(nodes)])
+        node.updated(nil, [tid] + [process(nodes)])
       end
-      alias_method :on_test_executed, :on_test_result
+      alias_method :on_if_any_failed, :on_if_failed
+      alias_method :on_if_all_failed, :on_if_failed
+      alias_method :on_if_passed, :on_if_failed
+      alias_method :on_if_any_passed, :on_if_failed
+      alias_method :on_if_all_passed, :on_if_failed
+      alias_method :on_if_ran, :on_if_failed
+      alias_method :on_unless_ran, :on_if_failed
     end
   end
 end
