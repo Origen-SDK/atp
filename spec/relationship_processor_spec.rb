@@ -4,7 +4,11 @@ describe 'The Relationship Processor' do
   include ATP::FlowAPI
 
   before :each do
-    self.flow = ATP::Program.new.flow(:sort1) 
+    self.atp = ATP::Program.new.flow(:sort1) 
+  end
+
+  def ast
+    atp.ast(optimization: :full, add_ids: false)
   end
 
   it "updates both sides of the relationship" do
@@ -14,7 +18,7 @@ describe 'The Relationship Processor' do
     test :test4, if_passed: :t2
     test :test5, if_failed: :t2
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -36,7 +40,7 @@ describe 'The Relationship Processor' do
           s(:test,
             s(:object, "test5"))))
 
-    flow.ast.should ==
+    ast.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -75,7 +79,7 @@ describe 'The Relationship Processor' do
       test :test4, if_failed: :ect1_3
     end
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -91,7 +95,7 @@ describe 'The Relationship Processor' do
             s(:test,
               s(:object, "test4")))))
 
-    flow.ast.should ==
+    ast.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -119,7 +123,7 @@ describe 'The Relationship Processor' do
     test :test2, id: :t2
     test :test3, if_any_failed: [:t1, :t2]
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -132,7 +136,7 @@ describe 'The Relationship Processor' do
           s(:test,
             s(:object, "test3"))))
 
-    flow.ast.should ==
+    ast.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -162,7 +166,7 @@ describe 'The Relationship Processor' do
       test :test4
     end
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:group,
@@ -178,7 +182,7 @@ describe 'The Relationship Processor' do
           s(:test,
             s(:object, "test4"))))
 
-    flow.ast.should ==
+    ast.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:group,
@@ -210,7 +214,7 @@ describe 'The Relationship Processor' do
       end
     end
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:group,
@@ -228,7 +232,7 @@ describe 'The Relationship Processor' do
             s(:test,
               s(:object, "test4")))))
 
-    flow.ast.should ==
+    ast.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:group,
@@ -249,5 +253,54 @@ describe 'The Relationship Processor' do
               s(:object, "test3")),
             s(:test,
               s(:object, "test4")))))
+  end
+
+  it "ran conditions are converted to flag conditions" do
+    test :test1, id: :e1
+    test :test2, id: :e2
+    test :test3, unless_ran: :e1
+    if_ran :e2 do
+      test :test4
+    end
+
+    atp.raw.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:test,
+          s(:object, "test1"),
+          s(:id, "e1")),
+        s(:test,
+          s(:object, "test2"),
+          s(:id, "e2")),
+        s(:unless_ran, "e1",
+          s(:test,
+            s(:object, "test3"))),
+        s(:if_ran, "e2",
+          s(:test,
+            s(:object, "test4"))))
+
+    ast.should == 
+      s(:flow,
+        s(:name, "sort1"),
+        s(:test,
+          s(:object, "test1"),
+          s(:id, "e1"),
+          s(:on_fail,
+            s(:set_flag, "e1_RAN", "auto_generated")),
+          s(:on_pass,
+            s(:set_flag, "e1_RAN", "auto_generated"))),
+        s(:test,
+          s(:object, "test2"),
+          s(:id, "e2"),
+          s(:on_fail,
+            s(:set_flag, "e2_RAN", "auto_generated")),
+          s(:on_pass,
+            s(:set_flag, "e2_RAN", "auto_generated"))),
+        s(:unless_flag, "e1_RAN",
+          s(:test,
+            s(:object, "test3"))),
+        s(:if_flag, "e2_RAN",
+          s(:test,
+            s(:object, "test4"))))
   end
 end

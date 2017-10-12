@@ -45,7 +45,7 @@ module ATP
     end
 
     def n(type, children)
-      ATP::AST::Node.new(type, children)
+      ATP::AST::Node.new(type, children, id: ATP.next_id)
     end
 
     def n0(type)

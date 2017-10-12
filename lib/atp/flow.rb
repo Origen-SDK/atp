@@ -3,8 +3,6 @@ module ATP
   # with an abstract test program
   class Flow
     attr_reader :program, :name
-    # Returns the raw AST
-    attr_reader :raw
 
     attr_accessor :source_file, :source_line_number, :description
 
@@ -71,17 +69,31 @@ module ATP
       extract_meta!(options)
       @program = program
       @name = name
-      @raw = n(:flow, n(:name, name))
+      @pipeline = [n(:flow, n(:name, name))]
     end
 
     # @api private
     def marshal_dump
-      [@name, @program, Processors::Marshal.new.process(@raw)]
+      [@name, @program, Processors::Marshal.new.process(raw)]
     end
 
     # @api private
     def marshal_load(array)
-      @name, @program, @raw = array
+      @name, @program, raw = array
+      @pipeline = [raw]
+    end
+
+    # Returns the raw AST
+    def raw
+      n = nil
+      @pipeline.reverse_each do |node|
+        if n
+          n = node.updated(nil, node.children + [n])
+        else
+          n = node
+        end
+      end
+      n
     end
 
     # Returns a processed/optimized AST, this is the one that should be
@@ -90,15 +102,60 @@ module ATP
       options = {
         apply_relationships: true,
         # Supply a unique ID to append to all IDs
-        unique_id:           nil
+        unique_id:           nil,
+        # Set to :full, or :flat
+        optimization:        :full,
+
+        # Adds IDs to all nodes, you would only want to turn this off in a test scenario
+        # where you know that you don't need it
+        add_ids:             true
       }.merge(options)
+      ###############################################################################
+      ## Common pre-processing and validation
+      ###############################################################################
       ast = Processors::PreCleaner.new.run(raw)
       Validators::DuplicateIDs.new(self).run(ast)
       Validators::MissingIDs.new(self).run(ast)
-      ast = Processors::FlowID.new.run(ast, options[:unique_id]) if options[:unique_id]
-      ast = Processors::Relationship.new.run(ast) if options[:apply_relationships]
-      ast = Processors::Condition.new.run(ast)
       Validators::Jobs.new(self).run(ast)
+      # Ensure everything has an ID, this helps later if condition nodes need to be generated
+      ast = Processors::AddIDs.new.run(ast) if options[:add_ids]
+      ast = Processors::FlowID.new.run(ast, options[:unique_id]) if options[:unique_id]
+
+      ###############################################################################
+      ## Optimization for a C-like flow target, e.g. V93K
+      ###############################################################################
+      if options[:optimization] == :full
+        # This applies all the relationships by setting flags in the referenced test and
+        # changing all if_passed/failed type nodes to if_flag type nodes
+        ast = Processors::Relationship.new.run(ast) if options[:apply_relationships]
+        ast = Processors::Condition.new.run(ast)
+
+      end
+
+      ###############################################################################
+      ## Optimization for a row-based target, e.g. UltraFLEX
+      ###############################################################################
+      if options[:optimization] == :flat
+        # Un-nest everything embedded in else nodes
+        ast = Processors::ElseRemover.new.run(ast)
+        # Un-nest everything embedded in on_pass/fail nodes except for binning and
+        # flag setting
+        ast = Processors::OnPassFailRemover.new.run(ast)
+        # Flatten conditions
+        ast = Processors::Flattener.new.run(ast)
+        # Everything should now be flat, except for groups
+        # This applies all the relationships by setting flags in the referenced test and
+        # changing all if_passed/failed type nodes to if_flag type nodes
+        ast = Processors::Relationship.new.run(ast) if options[:apply_relationships]
+        ast = Processors::ApplyPostGroupActions.new.run(ast)
+        ast = Processors::RedundantConditionRemover.new.run(ast)
+      end
+
+      ###############################################################################
+      ## Common cleanup
+      ###############################################################################
+      # Removes any empty on_pass and on_fail branches
+      ast = Processors::EmptyBranchRemover.new.run(ast)
       ast
     end
 
@@ -107,7 +164,7 @@ module ATP
     def volatile(*flags)
       options = flags.pop if flags.last.is_a?(Hash)
       flags = flags.flatten
-      @raw = add_volatile_flags(@raw, flags)
+      @pipeline[0] = add_volatile_flags(@pipeline[0], flags)
     end
 
     # Group all tests generated within the given block
@@ -257,6 +314,9 @@ module ATP
     end
 
     def bin(number, options = {})
+      if number.is_a?(Hash)
+        fail 'The bin number must be passed as the first argument'
+      end
       extract_meta!(options)
       apply_conditions(options) do
         options[:type] ||= :fail
@@ -267,6 +327,9 @@ module ATP
     end
 
     def pass(number, options = {})
+      if number.is_a?(Hash)
+        fail 'The bin number must be passed as the first argument'
+      end
       options[:type] = :pass
       bin(number, options)
     end
@@ -325,48 +388,29 @@ module ATP
       nil
     end
 
-    # Append all nodes generated within the given block to the given node
-    # instead of the top-level flow node
-    #
-    # @api private
-    def append_to(node)
-      orig = @append_to
-      @append_to = node
-      yield
-      node = @append_to
-      @append_to = orig
-      node
-    end
-
     # Returns true if the test context generated from the supplied options + existing condition
     # wrappers, is different from that which was applied to the previous test.
     def context_changed?(options)
-      a = context
-      b = build_context(options)
-      !context_equal?(a, b)
-    end
-
-    def context
-      context
-    end
-
-    def context_equal?(a, b)
-      if a.size == b.size
-        a = clean_condition(a[:conditions])
-        b = clean_condition(b[:conditions])
-        if a.keys.sort == b.keys.sort
-          a.all? do |key, value|
-            value.flatten.uniq.sort == b[key].flatten.uniq.sort
-          end
-        end
-      end
+      false
     end
 
     # Define handlers for all of the flow control block methods, unless a custom one has already
     # been defined above
     CONDITION_KEYS.keys.each do |method|
-      define_method method do |flag, options = {}, &block|
-        flow_control_method(CONDITION_KEYS[method], flag, options, &block)
+      define_method method do |*flags, &block|
+        if flags.last.is_a?(Hash)
+          options = flags.pop
+        else
+          options = {}
+        end
+        flags = flags.first if flags.size == 1
+        # Legacy option provided by OrigenTesters that permits override of a block enable method by passing
+        # an :or option with a true value
+        if (CONDITION_KEYS[method] == :if_enabled || CONDITION_KEYS[method] || :unless_enabled) && options[:or]
+          block.call
+        else
+          flow_control_method(CONDITION_KEYS[method], flags, options, &block)
+        end
       end unless method_defined?(method)
     end
 
@@ -374,6 +418,14 @@ module ATP
 
     def flow_control_method(name, flag, options = {}, &block)
       extract_meta!(options)
+      if flag.is_a?(Array)
+        if name == :if_passed
+          fail 'if_passed only accepts one ID, use if_any_passed or if_all_passed for multiple IDs'
+        end
+        if name == :if_failed
+          fail 'if_failed only accepts one ID, use if_any_failed or if_all_failed for multiple IDs'
+        end
+      end
       apply_conditions(options) do
         if block
           node = n(name, flag)
@@ -396,50 +448,34 @@ module ATP
       end
     end
 
-    def clean_condition(h)
-      c = {}
-      h.each do |hash|
-        key, value = hash.first[0], hash.first[1]
-        key = CONDITION_KEYS[key]
-        value = clean_value(value)
-        c[key] ||= []
-        c[key] << value unless c[key].include?(value)
-      end
-      c
-    end
-
-    def clean_value(value)
-      if value.is_a?(Array)
-        value.map { |v| v.to_s.downcase }.sort
-      else
-        value.to_s.downcase
-      end
-    end
-
-    def build_context(options)
-      c = open_conditions.dup
-      if options[:conditions]
-        options[:conditions].each do |key, value|
-          c << { key => value }
-        end
-      end
-      { conditions: c }
-    end
-
     def apply_conditions(options, node = nil)
-      conditions = extract_conditions(options)
-      node = yield
+      # Applying the current context, means to append to the same node as the last time, this
+      # means that the next node will pick up the exact same condition context as the previous one
+      if options[:context] == :current
+        node = yield
+        @pipeline = @pipeline.map { |parent| Processors::AppendTo.new.run(parent, node, @last_append.id) }
+        node
+      else
+        conditions = extract_conditions(options)
+        node = yield
 
-      conditions.each do |key, value|
-        if key == :group
-          node = n(key, n(:name, value.to_s), node)
-        else
-          node = n(key, value, node)
+        update_last_append = !condition_node?(node)
+
+        conditions.each do |key, value|
+          if key == :group
+            node = n(key, n(:name, value.to_s), node)
+          else
+            node = n(key, value, node)
+          end
+          if update_last_append
+            @last_append = node
+            update_last_append = false
+          end
         end
-      end
 
-      append(node)
-      node
+        append(node)
+        node
+      end
     end
 
     def extract_conditions(options)
@@ -458,27 +494,29 @@ module ATP
       conditions
     end
 
+    def append(node)
+      @last_append = @pipeline.last unless condition_node?(node)
+      n = @pipeline.pop
+      @pipeline << n.updated(nil, n.children + [node])
+      @pipeline.last
+    end
+
+    # Append all nodes generated within the given block to the given node
+    # instead of the top-level flow node
+    def append_to(node)
+      @pipeline << node
+      yield
+      @pipeline.pop
+    end
+
+    def condition_node?(node)
+      !!CONDITION_KEYS[node.type]
+    end
+
     def extract_meta!(options)
       self.source_file = options.delete(:source_file)
       self.source_line_number = options.delete(:source_line_number)
       self.description = options.delete(:description)
-    end
-
-    # For testing
-    def raw=(ast)
-      @raw = ast
-    end
-
-    def open_conditions
-      @open_conditions ||= []
-    end
-
-    def append(node)
-      if @append_to
-        @append_to = @append_to.updated(nil, @append_to.children + [node])
-      else
-        @raw = @raw.updated(nil, @raw.children + [node])
-      end
     end
 
     def id(name)

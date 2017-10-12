@@ -4,7 +4,7 @@ describe 'The Condition Processor' do
   include ATP::FlowAPI
 
   before :each do
-    self.flow = ATP::Program.new.flow(:sort1) 
+    self.atp = ATP::Program.new.flow(:sort1) 
   end
 
   it "wraps adjacent nodes that share the same conditions" do
@@ -12,7 +12,7 @@ describe 'The Condition Processor' do
     test :test2, if_enabled: "bitmap"
     test :test3, if_enabled: "bitmap", if_failed: :t1
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -26,7 +26,7 @@ describe 'The Condition Processor' do
             s(:test,
               s(:object, "test3")))))
 
-    flow.ast(apply_relationships: false).should ==
+    atp.ast(optimization: :full, apply_relationships: false, add_ids: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -50,7 +50,7 @@ describe 'The Condition Processor' do
       end
     end
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -67,7 +67,7 @@ describe 'The Condition Processor' do
               s(:test,
                 s(:object, "test4"))))))
 
-    flow.ast(apply_relationships: false).should ==
+    atp.ast(optimization: :full, apply_relationships: false, add_ids: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -95,7 +95,7 @@ describe 'The Condition Processor' do
       end
     end
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -117,7 +117,7 @@ describe 'The Condition Processor' do
               s(:test,
                 s(:object, "test4"))))))
 
-    flow.ast(apply_relationships: false).should ==
+    atp.ast(optimization: :full, apply_relationships: false, add_ids: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -151,7 +151,7 @@ describe 'The Condition Processor' do
       end
     end
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:group,
@@ -172,7 +172,7 @@ describe 'The Condition Processor' do
                 s(:test,
                   s(:object, "test4")))))))
 
-    flow.ast(apply_relationships: false).should ==
+    atp.ast(optimization: :full, apply_relationships: false, add_ids: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:group,
@@ -204,7 +204,7 @@ describe 'The Condition Processor' do
       end
     end
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:if_job, "p1",
@@ -224,7 +224,7 @@ describe 'The Condition Processor' do
                   s(:object, "test4")))))))
 
 
-    flow.ast(apply_relationships: false).should ==
+    atp.ast(optimization: :full, apply_relationships: false, add_ids: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:if_job, "p1",
@@ -250,7 +250,7 @@ describe 'The Condition Processor' do
     test :test6
     test :test7, if_job: ["p1", "p2"]
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:if_job, ["p1", "p2"],
@@ -272,7 +272,7 @@ describe 'The Condition Processor' do
           s(:test,
             s(:object, "test7"))))
 
-    flow.ast(apply_relationships: false).should ==
+    atp.ast(optimization: :full, apply_relationships: false, add_ids: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:if_job, ["p1", "p2"],
@@ -303,7 +303,7 @@ describe 'The Condition Processor' do
     test :test5
     test :test6, if_job: ["p1", "p2"]
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:if_job, ["p1", "p2"],
@@ -323,7 +323,7 @@ describe 'The Condition Processor' do
           s(:test,
             s(:object, "test6"))))
 
-    flow.ast(apply_relationships: false).should ==
+    atp.ast(optimization: :full, apply_relationships: false, add_ids: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:if_job, ["p1", "p2"],
@@ -360,7 +360,7 @@ describe 'The Condition Processor' do
       test :test4, if_failed: :ect1_1
     end
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -393,7 +393,7 @@ describe 'The Condition Processor' do
             s(:test,
               s(:object, "test4")))))
 
-    flow.ast(apply_relationships: false).should ==
+    atp.ast(optimization: :full, apply_relationships: false, add_ids: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -439,7 +439,7 @@ describe 'The Condition Processor' do
       test :test4
     end
 
-    flow.raw.should == 
+    atp.raw.should == 
       s(:flow,
         s(:name, "sort1"),
         s(:log, "Test that if_any_failed works"),
@@ -466,7 +466,7 @@ describe 'The Condition Processor' do
           s(:test,
             s(:object, "test4"))))
 
-    flow.ast(apply_relationships: false).should == 
+    atp.ast(optimization: :full, apply_relationships: false, add_ids: false).should == 
       s(:flow,
         s(:name, "sort1"),
         s(:log, "Test that if_any_failed works"),
@@ -503,7 +503,7 @@ describe 'The Condition Processor' do
       test :erase_all, if_job: ["fr"]
     end
 
-    flow.raw.should == 
+    atp.raw.should == 
       s(:flow,
         s(:name, "sort1"),
         s(:group,
@@ -518,7 +518,7 @@ describe 'The Condition Processor' do
             s(:test,
               s(:object, "erase_all")))))
 
-    flow.ast(apply_relationships: false).should == 
+    atp.ast(optimization: :full, apply_relationships: false, add_ids: false).should == 
       s(:flow,
         s(:name, "sort1"),
         s(:group,
@@ -536,7 +536,7 @@ describe 'The Condition Processor' do
       test :nvm_dist_vcg, if_flag: :data_collection
     end
 
-    flow.raw.should == 
+    atp.raw.should == 
       s(:flow,
         s(:name, "sort1"),
         s(:if_flag, "data_collection",
@@ -544,7 +544,7 @@ describe 'The Condition Processor' do
             s(:test,
               s(:object, "nvm_dist_vcg")))))
 
-    flow.ast(apply_relationships: false).should == 
+    atp.ast(optimization: :full, apply_relationships: false, add_ids: false).should == 
       s(:flow,
         s(:name, "sort1"),
         s(:if_flag, "data_collection",
@@ -554,13 +554,13 @@ describe 'The Condition Processor' do
 
   it "Flags conditions are not optimized when marked as volatile" do
     if_flag "my_flag" do
-      flow.test :test1, on_fail: { set_flag: "$My_Mixed_Flag", continue: true }
-      flow.test :test2, if_flag: "$My_Mixed_Flag"
-      flow.test :test1, if_flag: "my_flag"
-      flow.test :test2, if_flag: "my_flag"
+      test :test1, on_fail: { set_flag: "$My_Mixed_Flag", continue: true }
+      test :test2, if_flag: "$My_Mixed_Flag"
+      test :test1, if_flag: "my_flag"
+      test :test2, if_flag: "my_flag"
     end
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:if_flag, "my_flag",
@@ -579,7 +579,7 @@ describe 'The Condition Processor' do
             s(:test,
               s(:object, "test2")))))
 
-    flow.ast(apply_relationships: false).should ==
+    atp.ast(optimization: :full, apply_relationships: false, add_ids: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:if_flag, "my_flag",
@@ -596,9 +596,9 @@ describe 'The Condition Processor' do
           s(:test,
             s(:object, "test2"))))
 
-    flow.volatile "my_flag", :$my_other_flag
+    atp.volatile "my_flag", :$my_other_flag
 
-    flow.ast(apply_relationships: false).should ==
+    atp.ast(optimization: :full, apply_relationships: false, add_ids: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:volatile,
@@ -619,5 +619,29 @@ describe 'The Condition Processor' do
           s(:if_flag, "my_flag",
             s(:test,
               s(:object, "test2")))))
+  end
+
+  it "condition block methods can be inhibited with :or" do
+    # This is a legacy feature provided by OrigenTesters
+    if_enable "my_flag" do
+      test :test1
+    end
+    if_enable "my_flag", or: false do
+      test :test2
+    end
+    if_enable "my_flag", or: true do
+      test :test3
+    end
+
+    atp.ast(optimization: :full, add_ids: false).should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:if_enabled, "my_flag",
+          s(:test,
+            s(:object, "test1")),
+          s(:test,
+            s(:object, "test2"))),
+        s(:test,
+          s(:object, "test3")))
   end
 end

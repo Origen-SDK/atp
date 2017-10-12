@@ -1,18 +1,20 @@
 module ATP
   module FlowAPI
-    def flow=(flow)
-      @flow = flow
+    def atp=(atp)
+      @atp = atp
     end
 
-    def flow
-      @flow
+    def atp
+      @atp
     end
 
-    ([:test, :bin, :pass, :continue, :cz, :log, :sub_test] +
+    ([:test, :bin, :pass, :continue, :cz, :log, :sub_test, :volatile] +
       ATP::Flow::CONDITION_KEYS.keys).each do |method|
       define_method method do |*args, &block|
-        flow.send(method, *args, &block)
+        atp.send(method, *args, &block)
       end
     end
+
+    alias_method :logprint, :log
   end
 end

@@ -8,7 +8,7 @@ describe 'AST optimization' do
   include ATP::FlowAPI
 
   before :each do
-    self.flow = ATP::Program.new.flow(:sort1) 
+    self.atp = ATP::Program.new.flow(:sort1) 
   end
 
   it "test 1" do
@@ -25,7 +25,7 @@ describe 'AST optimization' do
     end
     test :gt3, if_failed: :gt_grp2
 
-    flow.raw.should == 
+    atp.raw.should == 
       s(:flow,
         s(:name, "sort1"),
         s(:log, "Another group-level dependencies test based on a real life use case"),
@@ -71,7 +71,7 @@ describe 'AST optimization' do
           s(:test,
             s(:object, "gt3"))))
 
-    flow.ast.should == 
+    atp.ast(optimization: :full, add_ids: false).should == 
       s(:flow,
         s(:name, "sort1"),
         s(:log, "Another group-level dependencies test based on a real life use case"),
@@ -140,7 +140,7 @@ describe 'AST optimization' do
       end
     end
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:log, "Test that nested groups work"),
@@ -205,7 +205,7 @@ describe 'AST optimization' do
                   s(:set_result, "fail",
                     s(:bin, 12))))))))
 
-    flow.ast.should ==
+    atp.ast(optimization: :full, add_ids: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:log, "Test that nested groups work"),
@@ -306,7 +306,7 @@ describe 'AST optimization' do
       end
     end
 
-    flow.raw.should == 
+    atp.raw.should == 
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -366,7 +366,7 @@ describe 'AST optimization' do
               s(:on_fail,
                 s(:continue))))))
 
-    flow.ast.should == 
+    atp.ast(optimization: :full, add_ids: false).should == 
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -432,7 +432,7 @@ describe 'AST optimization' do
       test :test2, if_enabled: :bitmap
     end
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:if_job, "j1",
@@ -444,7 +444,7 @@ describe 'AST optimization' do
             s(:test,
               s(:object, "test2")))))
 
-    flow.ast.should ==
+    atp.ast(optimization: :full, add_ids: false).should ==
       s(:flow,
         s(:name, "sort1"),
         s(:if_enabled, "bitmap",
@@ -469,7 +469,7 @@ describe 'AST optimization' do
       test :test4, name: :nt4, number: 0, bin: 13, if_failed: :nt1
     end
 
-    flow.raw.should == 
+    atp.raw.should == 
       s(:flow,
         s(:name, "sort1"),
         s(:log, "Test nested conditions on a group"),
@@ -515,7 +515,7 @@ describe 'AST optimization' do
                   s(:set_result, "fail",
                     s(:bin, 13))))))))
 
-    flow.ast.should == 
+    atp.ast(optimization: :full, add_ids: false).should == 
       s(:flow,
         s(:name, "sort1"),
         s(:log, "Test nested conditions on a group"),

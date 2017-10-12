@@ -5,6 +5,7 @@ module ATP
       include Factories
 
       attr_reader :file, :line_number, :description
+      attr_accessor :id
 
       def initialize(type, children = [], properties = {})
         # Always use strings instead of symbols in the AST, makes serializing
@@ -68,9 +69,9 @@ module ATP
         updated(nil, children - nodes)
       end
 
-      # Returns the first child node of the given type that is found
-      def find(type)
-        children.find { |c| c.try(:type) == type }
+      # Returns the first child node of the given type(s) that is found
+      def find(*types)
+        children.find { |c| types.include?(c.try(:type)) }
       end
 
       # Returns an array containing all child nodes of the given type(s)

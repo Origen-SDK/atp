@@ -5,7 +5,7 @@ describe 'The AST validators' do
 
   before :each do
     ATP::Validator.testing = true
-    self.flow = ATP::Program.new.flow(:sort1) 
+    self.atp = ATP::Program.new.flow(:sort1) 
   end
 
   def name
@@ -17,7 +17,7 @@ describe 'The AST validators' do
     test :test2
     test :test3, id: :t1
 
-    expect { flow.ast }.to raise_error(SystemExit).
+    expect { atp.ast }.to raise_error(SystemExit).
       and output(/Test ID t1 is defined more than once in flow sort1/).to_stdout
   end
 
@@ -26,7 +26,7 @@ describe 'The AST validators' do
     test :test2
     test :test3, if_failed: :t1
 
-    expect { flow.ast }.to raise_error(SystemExit).
+    expect { atp.ast }.to raise_error(SystemExit).
       and output(/Test ID t1 is referenced in flow sort1/).to_stdout
   end
 
@@ -34,7 +34,7 @@ describe 'The AST validators' do
     test :test1, if_job: "p1"
     test :test2, unless_job: "p2"
 
-    flow.ast.should ==
+    atp.ast(add_ids: false).should ==
         s(:flow,
           s(:name, "sort1"),
           s(:if_job, "p1",
@@ -49,21 +49,21 @@ describe 'The AST validators' do
       test :test4, unless_job: "p2"
     end
 
-    expect { flow.ast }.to raise_error(SystemExit).
+    expect { atp.ast }.to raise_error(SystemExit).
       and output(/if_job and unless_job conditions cannot both be applied to the same tests/).to_stdout
   end
 
   it "if_job names can't start with a negative symbol" do
     test :test1, if_job: '!p1'
 
-    expect { flow.ast }.to raise_error(SystemExit).
+    expect { atp.ast }.to raise_error(SystemExit).
       and output(/Job names should not be negated, use unless_job/).to_stdout
   end
 
   it "unless_job names can't start with a negative symbol" do
     test :test1, unless_job: '!p1'
 
-    expect { flow.ast }.to raise_error(SystemExit).
+    expect { atp.ast }.to raise_error(SystemExit).
       and output(/Job names should not be negated, use unless_job/).to_stdout
   end
 end

@@ -27,6 +27,13 @@ module ATP
     autoload :AddIDs, 'atp/processors/add_ids'
     autoload :AddSetResult, 'atp/processors/add_set_result'
     autoload :FlowID, 'atp/processors/flow_id'
+    autoload :EmptyBranchRemover, 'atp/processors/empty_branch_remover'
+    autoload :AppendTo, 'atp/processors/append_to'
+    autoload :Flattener, 'atp/processors/flattener'
+    autoload :RedundantConditionRemover, 'atp/processors/redundant_condition_remover'
+    autoload :ElseRemover, 'atp/processors/else_remover'
+    autoload :OnPassFailRemover, 'atp/processors/on_pass_fail_remover'
+    autoload :ApplyPostGroupActions, 'atp/processors/apply_post_group_actions'
   end
 
   # Summarizers extract summary data from the given AST
@@ -50,15 +57,9 @@ module ATP
     autoload :Graph,   'atp/formatters/graph'
   end
 
-  def self.or(*args)
-    OR.new(*args)
-  end
-
-  def self.and(*args)
-    AND.new(*args)
-  end
-
-  def self.not(*args)
-    NOT.new(*args)
+  # Maintains a unique ID counter to ensure that all nodes get a unique ID
+  def self.next_id
+    @next_id ||= 0
+    @next_id += 1
   end
 end

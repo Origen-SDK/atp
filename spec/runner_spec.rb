@@ -4,11 +4,11 @@ describe 'The Runner' do
   include ATP::FlowAPI
 
   before :each do
-    self.flow = ATP::Program.new.flow(:sort1) 
+    self.atp = ATP::Program.new.flow(:sort1) 
   end
 
   def run(options={})
-    ATP::Formatters::Basic.run(flow.ast, options)
+    ATP::Formatters::Basic.run(atp.ast, options)
   end
 
   it "is alive" do

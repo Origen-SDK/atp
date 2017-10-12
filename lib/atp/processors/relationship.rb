@@ -140,6 +140,13 @@ module ATP
         n(:if_flag, [id_to_flag(id, 'RAN')] + process_all(children))
       end
 
+      # Remove test_result nodes and replace with references to the flags set
+      # up stream by the parent node
+      def on_unless_ran(node)
+        id, *children = *node
+        n(:unless_flag, [id_to_flag(id, 'RAN')] + process_all(children))
+      end
+
       # Returns the ID of the give test node (if any), caller is responsible
       # for only passing test nodes
       def id(node)

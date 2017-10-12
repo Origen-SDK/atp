@@ -4,18 +4,18 @@ describe 'The flow builder API' do
   include ATP::FlowAPI
   
   before :each do
-    self.flow = ATP::Program.new.flow(:sort1) 
+    self.atp = ATP::Program.new.flow(:sort1) 
   end
 
   it 'is alive' do
-    flow.program.should be
-    flow.raw.should be
+    atp.program.should be
+    atp.raw.should be
   end
 
   it "tests can be added" do
     test :test1, on_fail: { bin: 5 }
     test :test2, on_fail: { bin: 6, continue: true }
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -41,7 +41,7 @@ describe 'The flow builder API' do
       pass 1
     end
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -63,7 +63,7 @@ describe 'The flow builder API' do
     test :test3, if_enabled: "bitmap"
     test :test4, unless_enabled: "bitmap", if_failed: :t1
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -89,7 +89,7 @@ describe 'The flow builder API' do
       test :test3, if_failed: :t1
     end
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -111,7 +111,7 @@ describe 'The flow builder API' do
       test :test3, if_failed: :t1
     end
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -136,7 +136,7 @@ describe 'The flow builder API' do
       end
     end
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -163,10 +163,10 @@ describe 'The flow builder API' do
       test :test3
     end
     group "g2", if_failed: :g1 do
-      flow.test :test4
-      flow.test :test5
+      atp.test :test4
+      atp.test :test5
     end
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -188,18 +188,18 @@ describe 'The flow builder API' do
   end
 
   describe "tests of individual APIs" do
-    it "flow.test" do
+    it "atp.test" do
       test("test1")
-      flow.raw.should ==
+      atp.raw.should ==
         s(:flow,
           s(:name, "sort1"),
           s(:test,
             s(:object, "test1")))
     end
 
-    it "flow.test with bin numbers" do
+    it "atp.test with bin numbers" do
       test("test1", bin: 1, softbin: 10, continue: true)
-      flow.raw.should ==
+      atp.raw.should ==
         s(:flow,
           s(:name, "sort1"),
           s(:test,
@@ -211,13 +211,13 @@ describe 'The flow builder API' do
               s(:continue))))
     end
 
-    it "flow.test with bin descriptions" do
+    it "atp.test with bin descriptions" do
       test("test1", bin: 1, softbin: 10, continue: true)
       test("test2", bin: 2, bin_description: 'hbin2 fails', softbin: 20, continue: true)
       test("test3", bin: 3, softbin: 30, softbin_description: 'sbin3 fails', continue: true)
       test("test4", bin: 4, bin_description: 'hbin4 fails', softbin: 40, softbin_description: 'sbin4 fails', continue: true)
    
-      flow.raw.should ==
+      atp.raw.should ==
         s(:flow,
           s(:name, "sort1"),
           s(:test,
@@ -249,7 +249,7 @@ describe 'The flow builder API' do
                 s(:softbin, 40, "sbin4 fails")),
               s(:continue))))
       
-      flow.raw.find_all(:test).each do |test_node|
+      atp.raw.find_all(:test).each do |test_node|
         set_result_node = test_node.find(:on_fail).find(:set_result)
         case test_node.find(:object).try(:value)
           when 'test1'
@@ -276,13 +276,13 @@ describe 'The flow builder API' do
       end
     end
 
-    it "flow.cz with enable words" do
+    it "atp.cz with enable words" do
       if_enable :cz do
         cz :test1, :cz1
       end
       cz :test1, :cz1, if_enable: :cz
 
-      flow.raw.should ==
+      atp.raw.should ==
         s(:flow,
           s(:name, "sort1"),
           s(:if_enabled, "cz",

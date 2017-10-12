@@ -4,11 +4,11 @@ describe 'The Pre Cleaner' do
   include ATP::FlowAPI
 
   before :each do
-    self.flow = ATP::Program.new.flow(:sort1) 
+    self.atp = ATP::Program.new.flow(:sort1) 
   end
 
   def ast
-    flow.ast(apply_relationships: false)
+    atp.ast(apply_relationships: false, add_ids: false)
   end
 
   it "lower cases all IDs and references" do
@@ -19,7 +19,7 @@ describe 'The Pre Cleaner' do
     test :test3, if_failed: "T1"
     test :test4, if_any_failed: ["T1", "T2"]
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -64,7 +64,7 @@ describe 'The Pre Cleaner' do
       test :test2, id: "G1"
     end
 
-    flow.raw.should ==
+    atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:group,
