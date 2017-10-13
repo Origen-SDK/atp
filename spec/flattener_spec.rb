@@ -7,6 +7,14 @@ describe 'The Flattener (and his friends)' do
     self.atp = ATP::Program.new.flow(:sort1) 
   end
 
+  def ast(options = {})
+    options = {
+      add_ids: false,
+      optimization: :flat,
+    }.merge(options)
+    atp.ast(options)
+  end
+
   it "flattens flag conditions and removes redundancies" do
     test :test1
     test :test2, if_flag: :f1
@@ -34,7 +42,7 @@ describe 'The Flattener (and his friends)' do
             s(:test,
               s(:object, "test5")))))
 
-    atp.ast(optimization: :flat, add_ids: false).should == 
+    ast.should == 
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -81,7 +89,7 @@ describe 'The Flattener (and his friends)' do
           s(:test,
             s(:object, "test4"))))
 
-    atp.ast(optimization: :flat, add_ids: false, apply_relationships: false).should == 
+    ast.should == 
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -124,7 +132,7 @@ describe 'The Flattener (and his friends)' do
               s(:test,
                 s(:object, "test3"))))))
 
-    atp.ast(optimization: :flat, apply_relationships: false, add_ids: false).should == 
+    ast.should == 
       s(:flow,
         s(:name, "sort1"),
         s(:test,
@@ -162,7 +170,7 @@ describe 'The Flattener (and his friends)' do
             s(:test,
               s(:object, "test3")))))
 
-    atp.ast(optimization: :flat, apply_relationships: false).should == 
+    ast(add_ids: true).should == 
       s(:flow,
         s(:name, "sort1"),
         s(:test,

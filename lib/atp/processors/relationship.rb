@@ -86,15 +86,26 @@ module ATP
       end
 
       def add_ran_flags(id, node)
-        node = node.ensure_node_present(:on_fail)
-        node = node.ensure_node_present(:on_pass)
-        node.updated(nil, node.children.map do |n|
-          if n.type == :on_pass || n.type == :on_fail
-            n = n.add n2(:set_flag, "#{id}_RAN", :auto_generated)
+        set_flag = n2(:set_flag, "#{id}_RAN", :auto_generated)
+        # For a group, set a flag immediately upon entry to the group to signal that
+        # it ran to later tests
+        if node.type == :group
+          name, id, *nodes = *node
+          if id.type == :id
+            nodes.unshift(set_flag)
+            nodes.unshift(id)
           else
-            n
+            nodes.unshift(id)
+            nodes.unshift(set_flag)
           end
-        end)
+          node.updated(nil, [name] + nodes)
+        # For a test, set a flag immediately after the referenced test has executed
+        # but don't change its pass/fail handling
+        elsif node.type == :test
+          n(:inline, [node, set_flag])
+        else
+          fail "Don't know how to add ran flag to #{node.type}"
+        end
       end
 
       # Set flags depending on the result on tests which have dependents later
@@ -115,33 +126,47 @@ module ATP
       end
       alias_method :on_group, :on_test
 
-      # Remove test_result nodes and replace with references to the flags set
-      # up stream by the parent node
       def on_if_failed(node)
         id, *children = *node
         n(:if_flag, [id_to_flag(id, 'FAILED')] + process_all(children))
       end
       alias_method :on_if_any_failed, :on_if_failed
-      alias_method :on_if_all_failed, :on_if_failed
 
-      # Remove test_result nodes and replace with references to the flags set
-      # up stream by the parent node
+      def on_if_all_failed(node)
+        ids, *children = *node
+        ids.reverse_each.with_index do |id, i|
+          if i == 0
+            node = n(:if_flag, [id_to_flag(id, 'FAILED')] + process_all(children))
+          else
+            node = n(:if_flag, [id_to_flag(id, 'FAILED'), node])
+          end
+        end
+        node
+      end
+
       def on_if_passed(node)
         id, *children = *node
         n(:if_flag, [id_to_flag(id, 'PASSED')] + process_all(children))
       end
       alias_method :on_if_any_passed, :on_if_passed
-      alias_method :on_if_all_passed, :on_if_passed
 
-      # Remove test_result nodes and replace with references to the flags set
-      # up stream by the parent node
+      def on_if_all_passed(node)
+        ids, *children = *node
+        ids.reverse_each.with_index do |id, i|
+          if i == 0
+            node = n(:if_flag, [id_to_flag(id, 'PASSED')] + process_all(children))
+          else
+            node = n(:if_flag, [id_to_flag(id, 'PASSED'), node])
+          end
+        end
+        node
+      end
+
       def on_if_ran(node)
         id, *children = *node
         n(:if_flag, [id_to_flag(id, 'RAN')] + process_all(children))
       end
 
-      # Remove test_result nodes and replace with references to the flags set
-      # up stream by the parent node
       def on_unless_ran(node)
         id, *children = *node
         n(:unless_flag, [id_to_flag(id, 'RAN')] + process_all(children))

@@ -159,7 +159,7 @@ module ATP
             result << node.updated(nil, [name])
           end
           result += conditions(children.first) if children.first
-        elsif ATP::Flow::CONDITION_KEYS[node.type]
+        elsif ATP::Flow::CONDITION_NODE_TYPES.include?(node.type)
           flag, *children = *node
           result << node.updated(nil, [flag])
           result += conditions(children.first) if children.first

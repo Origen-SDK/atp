@@ -103,12 +103,14 @@ module ATP
         apply_relationships: true,
         # Supply a unique ID to append to all IDs
         unique_id:           nil,
-        # Set to :full, or :flat
-        optimization:        :full,
-
+        # Set to :smt7, or :igxl
+        optimization:        nil,
         # Adds IDs to all nodes, you would only want to turn this off in a test scenario
         # where you know that you don't need it
-        add_ids:             true
+        add_ids:             true,
+        # When set to true, only one test will be allowed to set a given flag based on its
+        # result, additional flags will be inserted to give the same logical result.
+        one_flag_per_test:   false
       }.merge(options)
       ###############################################################################
       ## Common pre-processing and validation
@@ -124,31 +126,46 @@ module ATP
       ###############################################################################
       ## Optimization for a C-like flow target, e.g. V93K
       ###############################################################################
-      if options[:optimization] == :full
+      if options[:optimization] == :smt7
         # This applies all the relationships by setting flags in the referenced test and
         # changing all if_passed/failed type nodes to if_flag type nodes
         ast = Processors::Relationship.new.run(ast) if options[:apply_relationships]
         ast = Processors::Condition.new.run(ast)
 
-      end
-
       ###############################################################################
       ## Optimization for a row-based target, e.g. UltraFLEX
       ###############################################################################
-      if options[:optimization] == :flat
+      elsif options[:optimization] == :igxl
         # Un-nest everything embedded in else nodes
         ast = Processors::ElseRemover.new.run(ast)
         # Un-nest everything embedded in on_pass/fail nodes except for binning and
         # flag setting
         ast = Processors::OnPassFailRemover.new.run(ast)
-        # Flatten conditions
-        ast = Processors::Flattener.new.run(ast)
-        # Everything should now be flat, except for groups
         # This applies all the relationships by setting flags in the referenced test and
         # changing all if_passed/failed type nodes to if_flag type nodes
         ast = Processors::Relationship.new.run(ast) if options[:apply_relationships]
+        ast = Processors::Condition.new.run(ast)
         ast = Processors::ApplyPostGroupActions.new.run(ast)
+        ast = Processors::OneFlagPerTest.new.run(ast) if options[:one_flag_per_test]
         ast = Processors::RedundantConditionRemover.new.run(ast)
+
+      ###############################################################################
+      ## Not currently used, more of a test case
+      ###############################################################################
+      elsif options[:optimization] == :flat
+        # Un-nest everything embedded in else nodes
+        ast = Processors::ElseRemover.new.run(ast)
+        # Un-nest everything embedded in on_pass/fail nodes except for binning and
+        # flag setting
+        ast = Processors::OnPassFailRemover.new.run(ast)
+        ast = Processors::Condition.new.run(ast)
+        ast = Processors::Flattener.new.run(ast)
+
+      ###############################################################################
+      ## Default Optimization
+      ###############################################################################
+      else
+        ast = Processors::Condition.new.run(ast)
       end
 
       ###############################################################################
@@ -317,6 +334,7 @@ module ATP
       if number.is_a?(Hash)
         fail 'The bin number must be passed as the first argument'
       end
+      options[:bin_description] ||= options.delete(:description)
       extract_meta!(options)
       apply_conditions(options) do
         options[:type] ||= :fail
