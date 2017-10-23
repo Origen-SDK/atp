@@ -103,14 +103,15 @@ module ATP
         apply_relationships: true,
         # Supply a unique ID to append to all IDs
         unique_id:           nil,
-        # Set to :smt7, or :igxl
+        # Set to :smt, or :igxl
         optimization:        nil,
         # Adds IDs to all nodes, you would only want to turn this off in a test scenario
         # where you know that you don't need it
         add_ids:             true,
         # When set to true, only one test will be allowed to set a given flag based on its
         # result, additional flags will be inserted to give the same logical result.
-        one_flag_per_test:   false
+        one_flag_per_test:   false,
+        optimize_flags:      true
       }.merge(options)
       ###############################################################################
       ## Common pre-processing and validation
@@ -126,11 +127,12 @@ module ATP
       ###############################################################################
       ## Optimization for a C-like flow target, e.g. V93K
       ###############################################################################
-      if options[:optimization] == :smt7
+      if options[:optimization] == :smt
         # This applies all the relationships by setting flags in the referenced test and
         # changing all if_passed/failed type nodes to if_flag type nodes
         ast = Processors::Relationship.new.run(ast) if options[:apply_relationships]
         ast = Processors::Condition.new.run(ast)
+        ast = Processors::FlagOptimizer.new.run(ast) if options[:optimize_flags]
 
       ###############################################################################
       ## Optimization for a row-based target, e.g. UltraFLEX

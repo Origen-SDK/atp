@@ -8,7 +8,7 @@ describe 'The Runner' do
   end
 
   def run(options={})
-    ATP::Formatters::Basic.run(atp.ast(optimization: :smt7), options)
+    ATP::Formatters::Basic.run(atp.ast(optimization: :smt), options)
   end
 
   it "is alive" do

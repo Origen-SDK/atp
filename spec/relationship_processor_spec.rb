@@ -8,7 +8,7 @@ describe 'The Relationship Processor' do
   end
 
   def ast
-    atp.ast(optimization: :smt7, add_ids: false)
+    atp.ast(optimization: :smt, add_ids: false)
   end
 
   it "updates both sides of the relationship" do
@@ -102,20 +102,16 @@ describe 'The Relationship Processor' do
           s(:object, "test1"),
           s(:id, "ect1_1"),
           s(:on_fail,
-            s(:set_flag, "ect1_1_FAILED", "auto_generated"),
-            s(:continue))),
-        s(:if_flag, "ect1_1_FAILED",
-          s(:test,
-            s(:object, "test2")),
-          s(:test,
-            s(:object, "test3"),
-            s(:id, "ect1_3"),
-            s(:on_fail,
-              s(:set_flag, "ect1_3_FAILED", "auto_generated"),
-              s(:continue))),
-          s(:if_flag, "ect1_3_FAILED",
+            s(:continue),
             s(:test,
-              s(:object, "test4")))))
+              s(:object, "test2")),
+            s(:test,
+              s(:object, "test3"),
+              s(:id, "ect1_3"),
+              s(:on_fail,
+                s(:continue),
+                s(:test,
+                  s(:object, "test4")))))))
   end
 
   it "any failed is processed" do

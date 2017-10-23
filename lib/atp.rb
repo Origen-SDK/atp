@@ -35,6 +35,7 @@ module ATP
     autoload :OnPassFailRemover, 'atp/processors/on_pass_fail_remover'
     autoload :ApplyPostGroupActions, 'atp/processors/apply_post_group_actions'
     autoload :OneFlagPerTest, 'atp/processors/one_flag_per_test'
+    autoload :FlagOptimizer, 'atp/processors/flag_optimizer'
   end
 
   # Summarizers extract summary data from the given AST
