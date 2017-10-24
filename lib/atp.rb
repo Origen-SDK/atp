@@ -36,6 +36,7 @@ module ATP
     autoload :ApplyPostGroupActions, 'atp/processors/apply_post_group_actions'
     autoload :OneFlagPerTest, 'atp/processors/one_flag_per_test'
     autoload :FlagOptimizer, 'atp/processors/flag_optimizer'
+    autoload :AdjacentIfCombiner, 'atp/processors/adjacent_if_combiner'
   end
 
   # Summarizers extract summary data from the given AST

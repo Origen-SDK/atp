@@ -133,6 +133,7 @@ module ATP
         ast = Processors::Relationship.new.run(ast) if options[:apply_relationships]
         ast = Processors::Condition.new.run(ast)
         ast = Processors::FlagOptimizer.new.run(ast) if options[:optimize_flags]
+        ast = Processors::AdjacentIfCombiner.new.run(ast)
 
       ###############################################################################
       ## Optimization for a row-based target, e.g. UltraFLEX
@@ -387,6 +388,13 @@ module ATP
       end
     end
 
+    def set_flag(flag)
+      extract_meta!(options)
+      apply_conditions(options) do
+        set_flag_node(flag)
+      end
+    end
+
     # Insert explicitly rendered content in to the flow
     def render(str, options = {})
       extract_meta!(options)
@@ -556,7 +564,7 @@ module ATP
           children << set_result(:fail, fail_opts)
         end
         if options[:set_run_flag] || options[:set_flag]
-          children << set_flag(options[:set_run_flag] || options[:set_flag])
+          children << set_flag_node(options[:set_run_flag] || options[:set_flag])
         end
         children << n0(:continue) if options[:continue]
         children << render(options[:render]) if options[:render]
@@ -577,7 +585,7 @@ module ATP
           children << set_result(:pass, pass_opts)
         end
         if options[:set_run_flag] || options[:set_flag]
-          children << set_flag(options[:set_run_flag] || options[:set_flag])
+          children << set_flag_node(options[:set_run_flag] || options[:set_flag])
         end
         children << n0(:continue) if options[:continue]
         children << render(options[:render]) if options[:render]
@@ -637,7 +645,7 @@ module ATP
       n(:number, val.to_i)
     end
 
-    def set_flag(flag)
+    def set_flag_node(flag)
       n(:set_flag, flag)
     end
 

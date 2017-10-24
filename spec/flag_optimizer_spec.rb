@@ -16,7 +16,6 @@ describe 'The flag optimizer' do
     atp.ast(options)
   end
 
-
   it "works at the top-level" do
     test :test1, id: :t1 
     test :test2, if_failed: :t1

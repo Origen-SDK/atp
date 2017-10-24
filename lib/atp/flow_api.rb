@@ -8,7 +8,7 @@ module ATP
       @atp
     end
 
-    ([:test, :bin, :pass, :continue, :cz, :log, :sub_test, :volatile] +
+    ([:test, :bin, :pass, :continue, :cz, :log, :sub_test, :volatile, :set_flag, :enable, :disable] +
       ATP::Flow::CONDITION_KEYS.keys).each do |method|
       define_method method do |*args, &block|
         atp.send(method, *args, &block)
