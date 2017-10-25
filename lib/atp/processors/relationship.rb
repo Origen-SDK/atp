@@ -64,7 +64,7 @@ module ATP
         node = node.ensure_node_present(:on_fail)
         node.updated(nil, node.children.map do |n|
           if n.type == :on_pass
-            n = n.add n2(:set_flag, "#{id}_PASSED", :auto_generated)
+            n = n.add node.updated(:set_flag, ["#{id}_PASSED", :auto_generated])
           elsif n.type == :on_fail
             n.ensure_node_present(:continue)
           else
@@ -77,7 +77,7 @@ module ATP
         node = node.ensure_node_present(:on_fail)
         node.updated(nil, node.children.map do |n|
           if n.type == :on_fail
-            n = n.add n2(:set_flag, "#{id}_FAILED", :auto_generated)
+            n = n.add node.updated(:set_flag, ["#{id}_FAILED", :auto_generated])
             n.ensure_node_present(:continue)
           else
             n
@@ -86,7 +86,7 @@ module ATP
       end
 
       def add_ran_flags(id, node)
-        set_flag = n2(:set_flag, "#{id}_RAN", :auto_generated)
+        set_flag = node.updated(:set_flag, ["#{id}_RAN", :auto_generated])
         # For a group, set a flag immediately upon entry to the group to signal that
         # it ran to later tests
         if node.type == :group
@@ -102,7 +102,7 @@ module ATP
         # For a test, set a flag immediately after the referenced test has executed
         # but don't change its pass/fail handling
         elsif node.type == :test
-          n(:inline, [node, set_flag])
+          node.updated(:inline, [node, set_flag])
         else
           fail "Don't know how to add ran flag to #{node.type}"
         end
@@ -128,7 +128,7 @@ module ATP
 
       def on_if_failed(node)
         id, *children = *node
-        n(:if_flag, [id_to_flag(id, 'FAILED')] + process_all(children))
+        node.updated(:if_flag, [id_to_flag(id, 'FAILED')] + process_all(children))
       end
       alias_method :on_if_any_failed, :on_if_failed
 
@@ -136,9 +136,9 @@ module ATP
         ids, *children = *node
         ids.reverse_each.with_index do |id, i|
           if i == 0
-            node = n(:if_flag, [id_to_flag(id, 'FAILED')] + process_all(children))
+            node = node.updated(:if_flag, [id_to_flag(id, 'FAILED')] + process_all(children))
           else
-            node = n(:if_flag, [id_to_flag(id, 'FAILED'), node])
+            node = node.updated(:if_flag, [id_to_flag(id, 'FAILED'), node])
           end
         end
         node
@@ -146,7 +146,7 @@ module ATP
 
       def on_if_passed(node)
         id, *children = *node
-        n(:if_flag, [id_to_flag(id, 'PASSED')] + process_all(children))
+        node.updated(:if_flag, [id_to_flag(id, 'PASSED')] + process_all(children))
       end
       alias_method :on_if_any_passed, :on_if_passed
 
@@ -154,9 +154,9 @@ module ATP
         ids, *children = *node
         ids.reverse_each.with_index do |id, i|
           if i == 0
-            node = n(:if_flag, [id_to_flag(id, 'PASSED')] + process_all(children))
+            node = node.updated(:if_flag, [id_to_flag(id, 'PASSED')] + process_all(children))
           else
-            node = n(:if_flag, [id_to_flag(id, 'PASSED'), node])
+            node = node.updated(:if_flag, [id_to_flag(id, 'PASSED'), node])
           end
         end
         node
@@ -164,12 +164,12 @@ module ATP
 
       def on_if_ran(node)
         id, *children = *node
-        n(:if_flag, [id_to_flag(id, 'RAN')] + process_all(children))
+        node.updated(:if_flag, [id_to_flag(id, 'RAN')] + process_all(children))
       end
 
       def on_unless_ran(node)
         id, *children = *node
-        n(:unless_flag, [id_to_flag(id, 'RAN')] + process_all(children))
+        node.updated(:unless_flag, [id_to_flag(id, 'RAN')] + process_all(children))
       end
 
       # Returns the ID of the give test node (if any), caller is responsible

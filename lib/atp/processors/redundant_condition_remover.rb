@@ -12,7 +12,7 @@ module ATP
         sig = [node.type, node.to_a[0]]
         if @conditions.include?(sig)
           flag, *nodes = *node
-          n(:inline, process_all(nodes))
+          node.updated(:inline, process_all(nodes))
         else
           @conditions << sig
           node = node.updated(nil, process_all(node.children))

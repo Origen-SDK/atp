@@ -8,7 +8,7 @@ module ATP
         @results = [[]]
         @conditions = []
         process(node)
-        n(:flow, results)
+        node.updated(:flow, results)
       end
 
       def on_flow(node)
@@ -31,7 +31,7 @@ module ATP
 
       def on_condition_node(node)
         flag, *nodes = *node
-        @conditions << n(node.type, [flag])
+        @conditions << node.updated(node.type, [flag])
         process_all(nodes)
         @conditions.pop
       end

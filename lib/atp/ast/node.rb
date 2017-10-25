@@ -2,8 +2,6 @@ require 'ast'
 module ATP
   module AST
     class Node < ::AST::Node
-      include Factories
-
       attr_reader :file, :line_number, :description
       attr_accessor :id
 
@@ -35,9 +33,9 @@ module ATP
           self
         else
           if !child_nodes.empty?
-            node = n(type, child_nodes)
+            node = updated(type, child_nodes)
           else
-            node = n0(type)
+            node = updated(type, [])
           end
           updated(nil, children + [node])
         end

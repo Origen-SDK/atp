@@ -78,7 +78,7 @@ module ATP
       end
 
       def combine(node1, node2)
-        node1.updated(nil, process_all(node1.children) + [n(:else, process_all(node2.to_a[1..-1]))])
+        node1.updated(nil, process_all(node1.children) + [node2.updated(:else, process_all(node2.to_a[1..-1]))])
       end
 
       def opposite_flag_states?(node1, node2)

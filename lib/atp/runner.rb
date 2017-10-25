@@ -85,7 +85,7 @@ module ATP
       if id = node.find(:id)
         id = id.to_a[0]
         if failed_test_ids.include?(id)
-          node = node.add(n0(:failed))
+          node = node.add(node.updated(:failed, []))
           failed = true
           if n_on_fail = node.find(:on_fail)
             node = node.remove(n_on_fail)

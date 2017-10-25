@@ -10,7 +10,6 @@ module ATP
   # @see http://www.rubydoc.info/gems/ast/2.0.0/AST/Processor
   class Processor
     include ::AST::Processor::Mixin
-    include AST::Factories
 
     def run(node)
       process(node)

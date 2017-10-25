@@ -69,8 +69,8 @@ module ATP
           if to_be_set.empty?
             node
           else
-            nodes = to_be_set.map { |old, new| n(:if_flag, [new, n(:set_flag, [old, 'auto_generated'])]) }
-            n(:inline, [node] + nodes)
+            nodes = to_be_set.map { |old, new| node.updated(:if_flag, [new, node.updated(:set_flag, [old, 'auto_generated'])]) }
+            node.updated(:inline, [node] + nodes)
           end
         end
       end

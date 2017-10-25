@@ -52,7 +52,7 @@ module ATP
         name, *nodes = *node
         if conditions_to_remove.any? { |c| node.type == c.type && c.to_a == [name] }
           conditions_to_remove << node.updated(nil, [name])
-          result = n(:inline, optimize(process_all(nodes)))
+          result = node.updated(:inline, optimize(process_all(nodes)))
           conditions_to_remove.pop
         else
           conditions_to_remove << node.updated(nil, [name])
@@ -66,11 +66,11 @@ module ATP
         flag, *nodes = *node
         if conditions_to_remove.any? { |c| node.type == c.type && c.to_a == [flag] }
           if volatile?(flag)
-            result = n(:inline, optimize(process_all(nodes)))
+            result = node.updated(:inline, optimize(process_all(nodes)))
           else
             # This ensures any duplicate conditions matching the current one get removed
             conditions_to_remove << node.updated(nil, [flag])
-            result = n(:inline, optimize(process_all(nodes)))
+            result = node.updated(:inline, optimize(process_all(nodes)))
             conditions_to_remove.pop
           end
         else

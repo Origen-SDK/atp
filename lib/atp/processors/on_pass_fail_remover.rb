@@ -18,14 +18,14 @@ module ATP
           id = id.value
           nodes = [node]
           if on_fail && contains_anything_interesting?(on_fail)
-            nodes << n(:if_failed, [id] + on_fail.children)
+            nodes << node.updated(:if_failed, [id] + on_fail.children)
             nodes[0] = nodes[0].remove(on_fail)
           end
           if on_pass && contains_anything_interesting?(on_pass)
-            nodes << n(:if_passed, [id] + on_pass.children)
+            nodes << node.updated(:if_passed, [id] + on_pass.children)
             nodes[0] = nodes[0].remove(on_pass)
           end
-          n(:inline, nodes)
+          node.updated(:inline, nodes)
         else
           node.updated(nil, process_all(node.children))
         end

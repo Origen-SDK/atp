@@ -18,7 +18,7 @@ module ATP
             fail "Don't know how to inverse: #{node.type}"
           end
           n2 = e.updated(type, [n1.to_a[0]] + e.children)
-          n(:inline, [n1, n2])
+          node.updated(:inline, [n1, n2])
         else
           node.updated(nil, process_all(node.children))
         end
