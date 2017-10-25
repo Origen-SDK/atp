@@ -668,9 +668,9 @@ module ATP
     end
 
     def n(type, children, options = {})
-      options[:file] ||= options.delete(:source_file) || try(:source_file)
-      options[:line_number] ||= options.delete(:source_line_number) || try(:source_line_number)
-      options[:description] ||= options.delete(:description) || try(:description)
+      options[:file] ||= options.delete(:source_file) || source_file
+      options[:line_number] ||= options.delete(:source_line_number) || source_line_number
+      options[:description] ||= options.delete(:description) || description
       options[:id] = ATP.next_id
       ATP::AST::Node.new(type, children, options)
     end
