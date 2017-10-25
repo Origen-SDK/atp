@@ -10,6 +10,7 @@ module ATP
   # @see http://www.rubydoc.info/gems/ast/2.0.0/AST/Processor
   class Processor
     include ::AST::Processor::Mixin
+    include AST::Factories
 
     def run(node)
       process(node)
@@ -42,22 +43,6 @@ module ATP
 
     def handler_missing(node)
       node.updated(nil, process_all(node.children))
-    end
-
-    def n(type, children)
-      ATP::AST::Node.new(type, children, id: ATP.next_id)
-    end
-
-    def n0(type)
-      n(type, [])
-    end
-
-    def n1(type, arg)
-      n(type, [arg])
-    end
-
-    def n2(type, arg1, arg2)
-      n(type, [arg1, arg2])
     end
 
     def extract_volatiles(flow)

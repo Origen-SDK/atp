@@ -69,7 +69,7 @@ module ATP
       extract_meta!(options)
       @program = program
       @name = name
-      @pipeline = [n(:flow, n(:name, name))]
+      @pipeline = [n1(:flow, n1(:name, name))]
     end
 
     # @api private
@@ -199,11 +199,11 @@ module ATP
     def group(name, options = {})
       extract_meta!(options)
       apply_conditions(options) do
-        children = [n(:name, name)]
+        children = [n1(:name, name)]
         children << id(options[:id]) if options[:id]
         children << on_fail(options[:on_fail]) if options[:on_fail]
         children << on_pass(options[:on_pass]) if options[:on_pass]
-        g = n(:group, *children)
+        g = n(:group, children)
         append_to(g) { yield }
       end
     end
@@ -251,7 +251,7 @@ module ATP
           options[:on_fail][:set_flag] = f
         end
 
-        children = [n(:object, instance)]
+        children = [n1(:object, instance)]
 
         name = (options[:name] || options[:tname] || options[:test_name])
         unless name
@@ -259,7 +259,7 @@ module ATP
             name ||= instance.respond_to?(m) ? instance.send(m) : nil
           end
         end
-        children << n(:name, name) if name
+        children << n1(:name, name) if name
 
         num = (options[:number] || options[:num] || options[:tnum] || options[:test_number])
         unless num
@@ -310,7 +310,7 @@ module ATP
         if options[:meta]
           attrs = []
           options[:meta].each { |k, v| attrs << attribute(k, v) }
-          children << n(:meta, *attrs)
+          children << n(:meta, attrs)
         end
 
         if subs = options[:sub_test] || options[:sub_tests]
@@ -323,7 +323,7 @@ module ATP
         children << on_fail(options[:on_fail]) if options[:on_fail]
         children << on_pass(options[:on_pass]) if options[:on_pass]
 
-        n(:test, *children)
+        n(:test, children)
       end
     end
 
@@ -360,7 +360,7 @@ module ATP
     def cz(instance, cz_setup, options = {})
       extract_meta!(options)
       apply_conditions(options) do
-        node = n(:cz, cz_setup)
+        node = n1(:cz, cz_setup)
         append_to(node) { test(instance, options) }
       end
     end
@@ -370,7 +370,7 @@ module ATP
     def log(message, options = {})
       extract_meta!(options)
       apply_conditions(options) do
-        n(:log, message.to_s)
+        n1(:log, message.to_s)
       end
     end
 
@@ -378,7 +378,7 @@ module ATP
     def enable(var, options = {})
       extract_meta!(options)
       apply_conditions(options) do
-        n(:enable, var)
+        n1(:enable, var)
       end
     end
 
@@ -386,11 +386,11 @@ module ATP
     def disable(var, options = {})
       extract_meta!(options)
       apply_conditions(options) do
-        n(:disable, var)
+        n1(:disable, var)
       end
     end
 
-    def set_flag(flag)
+    def set_flag(flag, options = {})
       extract_meta!(options)
       apply_conditions(options) do
         set_flag_node(flag)
@@ -401,7 +401,7 @@ module ATP
     def render(str, options = {})
       extract_meta!(options)
       apply_conditions(options) do
-        n(:render, str)
+        n1(:render, str)
       end
     end
 
@@ -458,13 +458,13 @@ module ATP
       end
       apply_conditions(options) do
         if block
-          node = n(name, flag)
+          node = n1(name, flag)
           node = append_to(node) { block.call }
         else
           unless options[:then] || options[:else]
             fail "You must supply a :then or :else option when calling #{name} like this!"
           end
-          node = n(name, flag)
+          node = n1(name, flag)
           if options[:then]
             node = append_to(node) { options[:then].call }
           end
@@ -493,9 +493,9 @@ module ATP
 
         conditions.each do |key, value|
           if key == :group
-            node = n(key, n(:name, value.to_s), node)
+            node = n2(key, n1(:name, value.to_s), node)
           else
-            node = n(key, value, node)
+            node = n2(key, value, node)
           end
           if update_last_append
             @last_append = node
@@ -550,7 +550,7 @@ module ATP
     end
 
     def id(name)
-      n(:id, name)
+      n1(:id, name)
     end
 
     def on_fail(options = {})
@@ -569,8 +569,8 @@ module ATP
           children << set_flag_node(options[:set_run_flag] || options[:set_flag])
         end
         children << n0(:continue) if options[:continue]
-        children << n(:render, options[:render]) if options[:render]
-        n(:on_fail, *children)
+        children << n1(:render, options[:render]) if options[:render]
+        n(:on_fail, children)
       end
     end
 
@@ -590,65 +590,65 @@ module ATP
           children << set_flag_node(options[:set_run_flag] || options[:set_flag])
         end
         children << n0(:continue) if options[:continue]
-        children << n(:render, options[:render]) if options[:render]
-        n(:on_pass, *children)
+        children << n1(:render, options[:render]) if options[:render]
+        n(:on_pass, children)
       end
     end
 
     def pattern(name, path = nil)
       if path
-        n(:pattern, name, path)
+        n2(:pattern, name, path)
       else
-        n(:pattern, name)
+        n1(:pattern, name)
       end
     end
 
     def attribute(name, value)
-      n(:attribute, name, value)
+      n2(:attribute, name, value)
     end
 
     def level(name, value, units = nil)
       if units
-        n(:level, name, value, units)
+        n(:level, [name, value, units])
       else
-        n(:level, name, value)
+        n2(:level, name, value)
       end
     end
 
     def limit(value, rule, units = nil)
       if units
-        n(:limit, value, rule, units)
+        n(:limit, [value, rule, units])
       else
-        n(:limit, value, rule)
+        n2(:limit, value, rule)
       end
     end
 
     def pin(name)
-      n(:pin, name)
+      n1(:pin, name)
     end
 
     def set_result(type, options = {})
       children = []
       children << type
       if options[:bin] && options[:bin_description]
-        children << n(:bin, options[:bin], options[:bin_description])
+        children << n2(:bin, options[:bin], options[:bin_description])
       else
-        children << n(:bin, options[:bin]) if options[:bin]
+        children << n1(:bin, options[:bin]) if options[:bin]
       end
       if options[:softbin] && options[:softbin_description]
-        children << n(:softbin, options[:softbin], options[:softbin_description])
+        children << n2(:softbin, options[:softbin], options[:softbin_description])
       else
-        children << n(:softbin, options[:softbin]) if options[:softbin]
+        children << n1(:softbin, options[:softbin]) if options[:softbin]
       end
-      n(:set_result, *children)
+      n(:set_result, children)
     end
 
     def number(val)
-      n(:number, val.to_i)
+      n1(:number, val.to_i)
     end
 
     def set_flag_node(flag)
-      n(:set_flag, flag)
+      n1(:set_flag, flag)
     end
 
     # Ensures the flow ast has a volatile node, then adds the
@@ -663,7 +663,7 @@ module ATP
       existing = v.children.map { |f| f.type == :flag ? f.value : nil }.compact
       new = []
       flags.each do |flag|
-        new << n(:flag, flag) unless existing.include?(flag)
+        new << n1(:flag, flag) unless existing.include?(flag)
       end
       v = v.updated(nil, v.children + new)
       node.updated(nil, [name, v] + nodes)
