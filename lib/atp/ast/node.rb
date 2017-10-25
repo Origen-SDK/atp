@@ -78,6 +78,11 @@ module ATP
       def find_all(*types)
         children.select { |c| types.include?(c.try(:type)) }
       end
+
+      # Returns an array containing all flags which are set within the given node
+      def set_flags
+        Processors::ExtractSetFlags.new.run(self)
+      end
     end
   end
 end

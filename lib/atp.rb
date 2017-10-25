@@ -38,6 +38,7 @@ module ATP
     autoload :FlagOptimizer, 'atp/processors/flag_optimizer'
     autoload :AdjacentIfCombiner, 'atp/processors/adjacent_if_combiner'
     autoload :ContinueImplementer, 'atp/processors/continue_implementer'
+    autoload :ExtractSetFlags, 'atp/processors/extract_set_flags'
   end
 
   # Summarizers extract summary data from the given AST
