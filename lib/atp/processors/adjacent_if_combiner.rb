@@ -83,7 +83,7 @@ module ATP
 
       def opposite_flag_states?(node1, node2)
         ((node1.type == :if_flag && node2.type == :unless_flag) || (node1.type == :unless_flag && node2.type == :if_flag) ||
-         (node1.type == :if_enable && node2.type == :unless_enable) || (node1.type == :unless_enable && node2.type == :if_enable)) &&
+         (node1.type == :if_enabled && node2.type == :unless_enabled) || (node1.type == :unless_enabled && node2.type == :if_enabled)) &&
           node1.to_a[0] == node2.to_a[0]
       end
 

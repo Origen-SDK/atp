@@ -6,7 +6,8 @@ describe 'The post group action applier' do
   def ast(options = {})
     options = {
       optimization: :igxl,
-      add_ids: false
+      add_ids: false,
+      one_flag_per_test: false,
     }.merge(options)
     atp.ast(options)
   end

@@ -11,7 +11,8 @@ describe 'The flag optimizer' do
   def ast(options = {})
     options = {
       optimization: :smt,
-      add_ids: false
+      add_ids: false,
+      implement_continue: false
     }.merge(options)
     atp.ast(options)
   end

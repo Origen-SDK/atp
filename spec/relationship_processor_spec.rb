@@ -7,8 +7,13 @@ describe 'The Relationship Processor' do
     self.atp = ATP::Program.new.flow(:sort1) 
   end
 
-  def ast
-    atp.ast(optimization: :smt, add_ids: false)
+  def ast(options = {})
+    options = {
+      optimization: :smt,
+      add_ids: false,
+      implement_continue: false,
+    }.merge(options)
+    atp.ast(options)
   end
 
   it "updates both sides of the relationship" do

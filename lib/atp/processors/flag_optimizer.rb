@@ -74,7 +74,7 @@ module ATP
         name, *nodes = *node
         # Remove this node and return its children if required
         if if_run_flag_to_remove.last == node.to_a[0]
-          node.to_a.last
+          n(:inline, node.to_a[1..-1])
         else
           node.updated(nil, [name] + optimize(process_all(nodes)))
         end
@@ -196,7 +196,7 @@ module ATP
         # If the run_flag we care about is already at the top, just return node
         unless node.to_a[0] == flag && node.type == :if_flag
           if_run_flag_to_remove << flag
-          node = n(:if_flag, [flag] + process(node))
+          node = n(:if_flag, [flag] + [process(node)])
           if_run_flag_to_remove.pop
         end
         node

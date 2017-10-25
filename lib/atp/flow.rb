@@ -104,14 +104,13 @@ module ATP
         # Supply a unique ID to append to all IDs
         unique_id:           nil,
         # Set to :smt, or :igxl
-        optimization:        nil,
-        # Adds IDs to all nodes, you would only want to turn this off in a test scenario
-        # where you know that you don't need it
+        optimization:        :runner,
+        # These options are not intended for application use, but provide the ability to
+        # turn off certain processors during test cases
         add_ids:             true,
-        # When set to true, only one test will be allowed to set a given flag based on its
-        # result, additional flags will be inserted to give the same logical result.
-        one_flag_per_test:   false,
-        optimize_flags:      true
+        optimize_flags:      true,
+        one_flag_per_test:   true,
+        implement_continue:  true
       }.merge(options)
       ###############################################################################
       ## Common pre-processing and validation
@@ -127,11 +126,14 @@ module ATP
       ###############################################################################
       ## Optimization for a C-like flow target, e.g. V93K
       ###############################################################################
-      if options[:optimization] == :smt
+      if options[:optimization] == :smt || options[:optimization] == :runner
         # This applies all the relationships by setting flags in the referenced test and
         # changing all if_passed/failed type nodes to if_flag type nodes
         ast = Processors::Relationship.new.run(ast) if options[:apply_relationships]
         ast = Processors::Condition.new.run(ast)
+        unless options[:optimization] == :runner
+          ast = Processors::ContinueImplementer.new.run(ast) if options[:implement_continue]
+        end
         ast = Processors::FlagOptimizer.new.run(ast) if options[:optimize_flags]
         ast = Processors::AdjacentIfCombiner.new.run(ast)
 
@@ -567,7 +569,7 @@ module ATP
           children << set_flag_node(options[:set_run_flag] || options[:set_flag])
         end
         children << n0(:continue) if options[:continue]
-        children << render(options[:render]) if options[:render]
+        children << n(:render, options[:render]) if options[:render]
         n(:on_fail, *children)
       end
     end
@@ -588,7 +590,7 @@ module ATP
           children << set_flag_node(options[:set_run_flag] || options[:set_flag])
         end
         children << n0(:continue) if options[:continue]
-        children << render(options[:render]) if options[:render]
+        children << n(:render, options[:render]) if options[:render]
         n(:on_pass, *children)
       end
     end
