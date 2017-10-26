@@ -10,7 +10,7 @@ The flow model is an abstract syntax tree (AST) representation of the test flow,
 it incorporates the following metadata:
 
 * Test flow order
-* Test name, test object(instance) name, test number, bin number, softbin number
+* Test name, test object(instance) name, test number, bin number, softbin number, limits
 * Grouping of a collection of tests under a logical group
 * Job-based flow logic (e.g. probe1, ft_hot, etc.) 
 * Flow flag (enable word) flow logic (e.g. run_zero_defect_tests)
@@ -29,6 +29,10 @@ and or a list of tests to assume failure on.
 This AST model provides the backbone of the OrigenTesters test program generation API, but it has
 been separated out as this could also be generally useful in many other applications. e.g. test program
 translation and documentation tools, importing a non-Origen test program into the Origen eco-system.
+
+While this abstract model has initially focussed on representing the test flow, the expectation is that
+what can be represented by it will continue to evolve and grow over time. The ultimate end goal being a
+complete representation of a test program.
 
 ### Examples
 
@@ -77,8 +81,8 @@ flow.ast   # => s(:flow,
            #        s(:id, "t2"),
            #        s(:on_fail,
            #          s(:set_result, "fail",
-           #          s(:bin, 3),
-           #          s(:softbin, 102)))))
+           #            s(:bin, 3),
+           #            s(:softbin, 102)))))
 ~~~
 
 From here on, only the new part of the AST will be shown...
@@ -86,30 +90,30 @@ From here on, only the new part of the AST will be shown...
 Conditions can be added to gate a test's execution:
 
 ~~~ruby
-flow.test "test3", conditions: { if_enable: :bitmap, if_job: :probe1 }
-flow.test "test4", conditions: { if_enable: :bitmap, unless_job: :probe1 }
+flow.test "test3", if_enable: :bitmap, if_job: :probe1
+flow.test "test4", if_enable: :bitmap, unless_job: :probe1
 
 flow.ast   # => s(:flow,
            #       ...
-           #      s(:flow_flag, "bitmap", true,
-           #        s(:job, "probe1", true,
+           #      s(:if_flag, "bitmap",
+           #        s(:if_job, "probe1",
            #          s(:test,
            #            s(:object, "test3"))),
-           #        s(:job, "probe1", false,
+           #        s(:unless_job, "probe1",
            #          s(:test,
            #            s(:object, "test4")))))
 ~~~
 
 Note in the above case, that ATP has been smart enough to combine the two tests under the shared 'if bitmap' condition.
 
-To help application side coding, a condition wrapper API is also available:
+To help application side coding, all condition APIs support a block form:
 
 ~~~ruby
 # Produces the same AST as the previous example...
 
-flow.with_condition if_enable: :bitmap do
-  flow.test "test3", conditions: { if_job: :probe1 }
-  flow.test "test4", conditions: { unless_job: :probe1 }
+flow.if_enable :bitmap do
+  flow.test "test3", if_job: :probe1
+  flow.test "test4", unless_job: :probe1
 end
 ~~~
 
@@ -118,8 +122,8 @@ Runtime relationships between different tests can be established as shown below:
 ~~~ruby
 flow.test "test1", id: :t1
 flow.test "test2"
-flow.test "test3", conditions: { if_failed: :t1 }
-flow.test "test4", conditions: { if_passed: :t1 }
+flow.test "test3", if_failed: :t1
+flow.test "test4", if_passed: :t1
 
 flow.ast   # => s(:flow,
            #       ...
@@ -127,19 +131,16 @@ flow.ast   # => s(:flow,
            #        s(:object, "test1"),
            #        s(:id, "t1"),
            #          s(:on_pass,
-           #            s(:set_run_flag, "t1_PASSED")),
+           #            s(:set_flag, "t1_PASSED")),
            #          s(:on_fail,
            #            s(:continue),
-           #            s(:set_run_flag, "t1_FAILED"))),
+           #            s(:set_flag, "t1_FAILED"))),
            #      s(:test,
            #        s(:object, "test2")),
-           #      s(:run_flag, "t1_FAILED", true,
+           #      s(:if_flag, "t1_FAILED",
            #        s(:test,
            #          s(:object, "test3"))),
-           #      s(:run_flag, "t1_PASSED", true,
+           #      s(:unless_flag, "t1_PASSED",
            #        s(:test,
-           #        s(:object, "test4"))))
+           #          s(:object, "test4"))))
 ~~~
-
-
-
