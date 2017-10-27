@@ -310,8 +310,9 @@ describe 'The flow builder API' do
         test :test1
         context_changed?({}).should == false
         context_changed?(if_flag: 'my_flag').should == true
+        context_changed?(if_enable: :blah).should == false
+        context_changed?(if_enable: 'blah').should == false
       end
     end
-
   end
 end
