@@ -58,7 +58,6 @@ module ATP
   module Formatters
     autoload :Basic,   'atp/formatters/basic'
     autoload :Datalog, 'atp/formatters/datalog'
-    autoload :Graph,   'atp/formatters/graph'
   end
 
   # Maintains a unique ID counter to ensure that all nodes get a unique ID

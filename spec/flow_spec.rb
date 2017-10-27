@@ -294,5 +294,24 @@ describe 'The flow builder API' do
               s(:test,
                 s(:object, "test1")))))
     end
+
+    it "tests of context_changed?" do
+      context_changed?.should == false
+      context_changed?({}).should == false
+      test :test1
+      context_changed?({}).should == false
+      context_changed?(if_enable: "bitmap").should == true
+      context_changed?({}).should == false
+      if_enable :blah do
+        context_changed?({}).should == true
+      end
+      context_changed?({}).should == false
+      if_enable :blah do
+        test :test1
+        context_changed?({}).should == false
+        context_changed?(if_flag: 'my_flag').should == true
+      end
+    end
+
   end
 end

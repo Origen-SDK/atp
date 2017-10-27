@@ -321,6 +321,7 @@ module ATP
         children << on_fail(options[:on_fail]) if options[:on_fail]
         children << on_pass(options[:on_pass]) if options[:on_pass]
 
+        save_conditions
         n(:test, children)
       end
     end
@@ -419,7 +420,8 @@ module ATP
     # Returns true if the test context generated from the supplied options + existing condition
     # wrappers, is different from that which was applied to the previous test.
     def context_changed?(options)
-      false
+      options[:_dont_delete_conditions_] = true
+      last_conditions != clean_conditions(open_conditions + [extract_conditions(options)])
     end
 
     # Define handlers for all of the flow control block methods, unless a custom one has already
@@ -442,6 +444,10 @@ module ATP
       end unless method_defined?(method)
     end
 
+    def inspect
+      "<ATP::Flow:#{object_id} #{name}>"
+    end
+
     private
 
     def flow_control_method(name, flag, options = {}, &block)
@@ -457,7 +463,9 @@ module ATP
       apply_conditions(options) do
         if block
           node = n1(name, flag)
+          open_conditions << [name, flag]
           node = append_to(node) { block.call }
+          open_conditions.pop
         else
           unless options[:then] || options[:else]
             fail "You must supply a :then or :else option when calling #{name} like this!"
@@ -481,11 +489,22 @@ module ATP
       # means that the next node will pick up the exact same condition context as the previous one
       if options[:context] == :current
         node = yield
-        @pipeline = @pipeline.map { |parent| Processors::AppendTo.new.run(parent, node, @last_append.id) }
+        found = false
+        @pipeline = @pipeline.map do |parent|
+          p = Processors::AppendTo.new
+          n = p.run(parent, node, @last_append.id)
+          found ||= p.succeeded?
+          n
+        end
+        unless found
+          fail 'The request to apply the current context has failed, this is likely a bug in the ATP plugin'
+        end
         node
       else
         conditions = extract_conditions(options)
+        open_conditions << conditions
         node = yield
+        open_conditions.pop
 
         update_last_append = !condition_node?(node)
 
@@ -506,16 +525,45 @@ module ATP
       end
     end
 
+    def save_conditions
+      @last_conditions = clean_conditions(open_conditions.dup)
+    end
+
+    def last_conditions
+      @last_conditions || {}
+    end
+
+    def open_conditions
+      @open_conditions ||= []
+    end
+
+    def clean_conditions(conditions)
+      result = {}.with_indifferent_access
+      conditions.each do |cond|
+        if cond.is_a?(Array)
+          if cond.size != 2
+            fail 'Something has gone wrong in ATP!'
+          else
+            result[cond[0]] = cond[1].to_s if cond[1]
+          end
+        else
+          cond.each { |k, v| result[k] = v.to_s if v }
+        end
+      end
+      result
+    end
+
     def extract_conditions(options)
       conditions = {}
+      delete_from_options = !options.delete(:_dont_delete_conditions_)
       options.each do |key, value|
         if CONDITION_KEYS[key]
-          options.delete(key)
+          options.delete(key) if delete_from_options
           key = CONDITION_KEYS[key]
-          if conditions[key]
-            fail "Multiple values assigned to flow condition #{key}"
+          if conditions[key] && value
+            fail "Multiple values assigned to flow condition #{key}" unless conditions[key] == value
           else
-            conditions[key] = value
+            conditions[key] = value if value
           end
         end
       end
@@ -671,6 +719,8 @@ module ATP
       options[:file] ||= options.delete(:source_file) || source_file
       options[:line_number] ||= options.delete(:source_line_number) || source_line_number
       options[:description] ||= options.delete(:description) || description
+      # Guarantee that each node has a unique meta-ID, in case we need to ever search
+      # for it
       options[:id] = ATP.next_id
       ATP::AST::Node.new(type, children, options)
     end
