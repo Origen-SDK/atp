@@ -14,6 +14,34 @@ module ATP
   module AST
     autoload :Node, 'atp/ast/node'
     autoload :Extractor, 'atp/ast/extractor'
+
+    # This is a shim to help backwards compatibility with ATP v0
+    module Builder
+      class LazyObject < ::BasicObject
+        def initialize(&callable)
+          @callable = callable
+        end
+
+        def __target_object__
+          @__target_object__ ||= @callable.call
+        end
+
+        def method_missing(method_name, *args, &block)
+          __target_object__.send(method_name, *args, &block)
+        end
+      end
+
+      # Some trickery to lazy load this to fire a deprecation warning if an app references it
+      CONDITION_KEYS ||= LazyObject.new do
+        Origen.log.deprecate 'ATP::AST::Builder::CONDITION_KEYS is frozen and is no longer maintained, consider switching to ATP::Flow::CONDITION_KEYS.keys for similar functionality'
+        [:if_enabled, :enabled, :enable_flag, :enable, :if_enable, :unless_enabled, :not_enabled,
+         :disabled, :disable, :unless_enable, :if_failed, :unless_passed, :failed, :if_passed,
+         :unless_failed, :passed, :if_ran, :if_executed, :unless_ran, :unless_executed, :job,
+         :jobs, :if_job, :if_jobs, :unless_job, :unless_jobs, :if_any_failed, :unless_all_passed,
+         :if_all_failed, :unless_any_passed, :if_any_passed, :unless_all_failed, :if_all_passed,
+         :unless_any_failed, :if_flag, :unless_flag]
+      end
+    end
   end
 
   # Processors actually modify the AST to clean and optimize the user input
