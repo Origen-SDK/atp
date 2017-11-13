@@ -279,7 +279,9 @@ module ATP
         if lims = options[:limit] || options[:limits]
           lims = [lims] unless lims.is_a?(Array)
           lims.each do |l|
-            children << limit(l[:value], l[:rule], l[:unit] || l[:units])
+            if l.is_a?(Hash)
+              children << limit(l[:value], l[:rule], l[:unit] || l[:units])
+            end
           end
         end
 
