@@ -386,4 +386,72 @@ describe 'general AST optimization test cases' do
             s(:set_result, "fail",
               s(:bin, 10)))))    
   end
+
+  it "a test case which got it really confused" do
+    unless_enable "eword1" do
+      unless_enable "eword2" do
+        test :test1, if_enable: :small_flow
+        test :test2, if_enable: :small_flow
+        test :test1
+        test :test1
+        test :test1
+        test :test1
+        test :test1, if_enable: :small_flow
+        test :test2, if_enable: :small_flow       
+      end
+      if_enable "eword2" do
+        test :test1, if_enable: :small_flow
+        test :test2, if_enable: :small_flow
+        test :test1
+        test :test1
+        test :test1
+        test :test1
+        test :test1, if_enable: :small_flow
+        test :test2, if_enable: :small_flow       
+      end
+    end
+
+    ast(add_ids: false).should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:unless_enabled, "eword1",
+          s(:unless_enabled, "eword2",
+            s(:if_enabled, "small_flow",
+              s(:test,
+                s(:object, "test1")),
+              s(:test,
+                s(:object, "test2"))),
+            s(:test,
+              s(:object, "test1")),
+            s(:test,
+              s(:object, "test1")),
+            s(:test,
+              s(:object, "test1")),
+            s(:test,
+              s(:object, "test1")),
+            s(:if_enabled, "small_flow",
+              s(:test,
+                s(:object, "test1")),
+              s(:test,
+                s(:object, "test2")))),
+          s(:if_enabled, "eword2",
+            s(:if_enabled, "small_flow",
+              s(:test,
+                s(:object, "test1")),
+              s(:test,
+                s(:object, "test2"))),
+            s(:test,
+              s(:object, "test1")),
+            s(:test,
+              s(:object, "test1")),
+            s(:test,
+              s(:object, "test1")),
+            s(:test,
+              s(:object, "test1")),
+            s(:if_enabled, "small_flow",
+              s(:test,
+                s(:object, "test1")),
+              s(:test,
+                s(:object, "test2"))))))
+  end
 end

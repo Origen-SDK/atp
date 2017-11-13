@@ -148,7 +148,7 @@ module ATP
           unless volatile?(flag)
             result << node.updated(nil, [flag])
           end
-          result += conditions(children.first) if children.first
+          result += conditions(children.first) if children.first && children.size == 1
         # elsif [:test_result, :job, :test_executed].include?(node.type)
         elsif node.type == :group
           name, *children = *node
@@ -158,11 +158,11 @@ module ATP
           else
             result << node.updated(nil, [name])
           end
-          result += conditions(children.first) if children.first
+          result += conditions(children.first) if children.first && children.size == 1
         elsif ATP::Flow::CONDITION_NODE_TYPES.include?(node.type)
           flag, *children = *node
           result << node.updated(nil, [flag])
-          result += conditions(children.first) if children.first
+          result += conditions(children.first) if children.first && children.size == 1
         end
         result
       end
