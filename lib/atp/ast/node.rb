@@ -20,6 +20,11 @@ module ATP
         end
       end
 
+      # Returns true if the node carries source file data, retrieve it via the source method
+      def has_source?
+        !!file
+      end
+
       # Create a new node from the given S-expression (a string)
       def self.from_sexp(sexp)
         @parser ||= Parser.new
