@@ -2,436 +2,278 @@ require 'spec_helper'
 
 # These are integration tests of all flow AST processors based
 # on some real life examples
+describe 'general AST optimization test cases' do
 
-describe 'AST optimization' do
+  include ATP::FlowAPI
 
-  def flow(ast)
-    f = ATP::Flow.new(self)
-    f.send("raw=", ast)
-    f
+  before :each do
+    self.atp = ATP::Program.new.flow(:sort1) 
+  end
+
+  def ast(options = {})
+    options = {
+      optimization: :smt,
+    }.merge(options)
+    atp.ast(options)
   end
 
   it "test 1" do
-    ast = to_ast <<-END
-      (flow
-        (name "sort1")
-        (log "Another group-level dependencies test based on a real life use case")
-        (test
-          (object "gt1")
-          (on-fail
-            (bin 90)))
-        (group
-          (name "gt_grp1")
-          (id "gt_grp1")
-          (test
-            (object "gt_grp1_test1")
-            (id "gt_grp1")
-            (on-fail
-              (bin 90)))
-          (test
-            (object "gt_grp1_test2")
-            (id "gt_grp1")
-            (on-fail
-              (bin 90))))
-        (test-result "gt_grp1" false
-          (test
-            (object "gt2")
-            (on-fail
-              (bin 90))))
-        (test-result "gt_grp1" false
-          (group
-            (name "gt_grp2")
-            (id "gt_grp2")
-            (test-result "gt_grp1" false
-              (test
-                (object "gt_grp2_test1")
-                (id "gt_grp2")
-                (on-fail
-                  (bin 90))))
-            (test-result "gt_grp1" false
-              (test
-                (object "gt_grp2_test2")
-                (id "gt_grp2")
-                (on-fail
-                  (bin 90))))))
-        (test-result "gt_grp2" false
-          (test
-            (object "gt3")
-            (on-fail
-              (bin 90)))))
-    END
+    log "Another group-level dependencies test based on a real life use case"
+    test :gt1, bin: 90
+    group :gt_grp1, id: :gt_grp1 do
+      test :gt_grp1_test1, bin: 90
+      test :gt_grp1_test2, bin: 90
+    end
+    test :gt2, bin: 90, if_failed: :gt_grp1
+    group :gt_grp2, id: :gt_grp2, if_failed: :gt_grp1 do
+      test :gt_grp2_test1, bin: 90
+      test :gt_grp2_test2, bin: 90
+    end
+    test :gt3, if_failed: :gt_grp2
 
-    optimized = to_ast <<-END
-      (flow
-        (name "sort1")
-        (log "Another group-level dependencies test based on a real life use case")
-        (test
-          (object "gt1")
-          (on-fail
-            (bin 90)))
-        (group
-          (name "gt_grp1")
-          (id "gt_grp1")
-          (test
-            (object "gt_grp1_test1")
-            (on-fail
-              (bin 90)))
-          (test
-            (object "gt_grp1_test2")
-            (on-fail
-              (bin 90)))
-          (on-fail
-            (set-run-flag "gt_grp1_FAILED" "auto_generated")
-            (continue)))
-        (run-flag "gt_grp1_FAILED" true
-          (test
-            (object "gt2")
-            (on-fail
-              (bin 90)))
-          (group
-            (name "gt_grp2")
-            (id "gt_grp2")
-            (test
-              (object "gt_grp2_test1")
-              (on-fail
-                (bin 90)))
-            (test
-              (object "gt_grp2_test2")
-              (on-fail
-                (bin 90)))
-            (on-fail
-              (set-run-flag "gt_grp2_FAILED" "auto_generated")
-              (continue))))
-        (run-flag "gt_grp2_FAILED" true
-          (test
-            (object "gt3")
-            (on-fail
-              (bin 90)))))
-    END
-
-    flow(ast).ast.should == optimized
+    ast.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:log, "Another group-level dependencies test based on a real life use case"),
+        s(:test,
+          s(:object, "gt1"),
+          s(:on_fail,
+            s(:set_result, "fail",
+              s(:bin, 90))),
+          s(:id, "t1")),
+        s(:group,
+          s(:name, "gt_grp1"),
+          s(:id, "gt_grp1"),
+          s(:test,
+            s(:object, "gt_grp1_test1"),
+            s(:id, "t2")),
+          s(:test,
+            s(:object, "gt_grp1_test2"),
+            s(:id, "t3")),
+          s(:on_fail,
+            s(:set_flag, "gt_grp1_FAILED", "auto_generated"))),
+        s(:if_flag, "gt_grp1_FAILED",
+          s(:test,
+            s(:object, "gt2"),
+            s(:on_fail,
+              s(:set_result, "fail",
+                s(:bin, 90))),
+            s(:id, "t4")),
+          s(:group,
+            s(:name, "gt_grp2"),
+            s(:id, "gt_grp2"),
+            s(:test,
+              s(:object, "gt_grp2_test1"),
+              s(:id, "t5")),
+            s(:test,
+              s(:object, "gt_grp2_test2"),
+              s(:id, "t6")),
+            s(:on_fail,
+              s(:set_flag, "gt_grp2_FAILED", "auto_generated")))),
+        s(:if_flag, "gt_grp2_FAILED",
+          s(:test,
+            s(:object, "gt3"),
+            s(:id, "t7"))))
   end
 
   it "test 2" do
-    ast = to_ast <<-END
-      (flow
-        (name "sort1")
-        (log "Test that nested groups work")
-        (group
-          (name "level1")
-          (test
-            (object "lev1_test1")
-            (on-fail
-              (bin 5)))
-          (test
-            (object "lev1_test2")
-            (on-fail
-              (bin 5)))
-          (test
-            (object "lev1_test3")
-            (id "l1t3")
-            (on-fail
-              (bin 10)))
-          (test-result "l1t3" false
-            (test
-              (object "lev1_test4")
-              (on-fail
-                (bin 12))))
-          (test
-            (object "lev1_test5")
-            (id "l1t5")
-            (on-fail
-              (bin 12)))
-          (group
-            (name "level2")
-            (test
-              (object "lev2_test1")
-              (on-fail
-                (bin 5)))
-            (test
-              (object "lev2_test2")
-              (on-fail
-                (bin 5)))
-            (test
-              (object "lev2_test3")
-              (id "l2t3")
-              (on-fail
-                (bin 10)))
-            (test-result "l2t3" false
-              (test
-                (object "lev2_test4")
-                (on-fail
-                  (bin 12))))
-            (test-result "l1t5" false
-              (test
-                (object "lev2_test5")
-                (on-fail
-                  (bin 12)))))))
-    END
+    log "Test that nested groups work"
+    group "level1" do
+      test :lev1_test1, bin: 5
+      test :lev1_test2, bin: 5
+      test :lev1_test3, bin: 10, id: :l1t3
+      test :lev1_test4, bin: 12, if_failed: :l1t3
+      test :lev1_test5, bin: 12, id: :l1t5
+      group "level2" do
+        test :lev2_test1, bin: 5
+        test :lev2_test2, bin: 5
+        test :lev2_test3, bin: 10, id: :l2t3
+        test :lev2_test4, bin: 12, if_failed: :l2t3
+        test :lev2_test5, bin: 12, if_failed: :l1t5
+      end
+    end
 
-    optimized = to_ast <<-END
-      (flow
-        (name "sort1")
-        (log "Test that nested groups work")
-        (group
-          (name "level1")
-          (test
-            (object "lev1_test1")
-            (on-fail
-              (bin 5)))
-          (test
-            (object "lev1_test2")
-            (on-fail
-              (bin 5)))
-          (test
-            (object "lev1_test3")
-            (id "l1t3")
-            (on-fail
-              (bin 10)
-              (set-run-flag "l1t3_FAILED" "auto_generated")
-              (continue)))
-          (run-flag "l1t3_FAILED" true
-            (test
-              (object "lev1_test4")
-              (on-fail
-                (bin 12))))
-          (test
-            (object "lev1_test5")
-            (id "l1t5")
-            (on-fail
-              (bin 12)
-              (set-run-flag "l1t5_FAILED" "auto_generated")
-              (continue)))
-          (group
-            (name "level2")
-            (test
-              (object "lev2_test1")
-              (on-fail
-                (bin 5)))
-            (test
-              (object "lev2_test2")
-              (on-fail
-                (bin 5)))
-            (test
-              (object "lev2_test3")
-              (id "l2t3")
-              (on-fail
-                (bin 10)
-                (set-run-flag "l2t3_FAILED" "auto_generated")
-                (continue)))
-            (run-flag "l2t3_FAILED" true
-              (test
-                (object "lev2_test4")
-                (on-fail
-                  (bin 12))))
-            (run-flag "l1t5_FAILED" true
-              (test
-                (object "lev2_test5")
-                (on-fail
-                  (bin 12)))))))
-    END
-
-    flow(ast).ast.should == optimized
+    ast.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:log, "Test that nested groups work"),
+        s(:group,
+          s(:name, "level1"),
+          s(:test,
+            s(:object, "lev1_test1"),
+            s(:on_fail,
+              s(:set_result, "fail",
+                s(:bin, 5))),
+            s(:id, "t1")),
+          s(:test,
+            s(:object, "lev1_test2"),
+            s(:on_fail,
+              s(:set_result, "fail",
+                s(:bin, 5))),
+            s(:id, "t2")),
+          s(:test,
+            s(:object, "lev1_test3"),
+            s(:id, "l1t3"),
+            s(:on_fail,
+              s(:test,
+                s(:object, "lev1_test4"),
+                s(:on_fail,
+                  s(:set_result, "fail",
+                    s(:bin, 12))),
+                s(:id, "t3")))),
+          s(:test,
+            s(:object, "lev1_test5"),
+            s(:id, "l1t5"),
+            s(:on_fail,
+              s(:set_flag, "l1t5_FAILED", "auto_generated"))),
+          s(:group,
+            s(:name, "level2"),
+            s(:test,
+              s(:object, "lev2_test1"),
+              s(:on_fail,
+                s(:set_result, "fail",
+                  s(:bin, 5))),
+              s(:id, "t4")),
+            s(:test,
+              s(:object, "lev2_test2"),
+              s(:on_fail,
+                s(:set_result, "fail",
+                  s(:bin, 5))),
+              s(:id, "t5")),
+            s(:test,
+              s(:object, "lev2_test3"),
+              s(:id, "l2t3"),
+              s(:on_fail,
+                s(:test,
+                  s(:object, "lev2_test4"),
+                  s(:on_fail,
+                    s(:set_result, "fail",
+                      s(:bin, 12))),
+                  s(:id, "t6")))),
+            s(:if_flag, "l1t5_FAILED",
+              s(:test,
+                s(:object, "lev2_test5"),
+                s(:on_fail,
+                  s(:set_result, "fail",
+                    s(:bin, 12))),
+                s(:id, "t7"))),
+            s(:id, "t8")),
+          s(:id, "t9")))    
   end
 
   it "test 3" do
-    ast = 
-      s(:flow,
-        s(:name, "sort1"),
-        s(:test,
-          s(:object, "t1"),
-          s(:id, "check_drb_completed")),
-        s(:test_result, "check_drb_completed", false,
-          s(:test,
-            s(:object, "nvm_pass_rd_prb1_temp_old"),
-            s(:name, "nvm_pass_rd_prb1_temp_old"),
-            s(:number, 204016080),
-            s(:id, "check_prb1_new"),
-            s(:on_fail,
-              s(:set_result, "fail",
-                s(:bin, 204),
-                s(:softbin, 204))))),
-        s(:test_result, "check_drb_completed", false,
-          s(:test_result, "check_prb1_new", false,
-            s(:test,
-              s(:object, "nvm_pass_rd_prb1_temp"),
-              s(:name, "nvm_pass_rd_prb1_temp"),
-              s(:number, 204016100),
-              s(:on_fail,
-                s(:set_result, "fail",
-                  s(:bin, 204),
-                  s(:softbin, 204)))))),
-        s(:test_result, "check_drb_completed", false,
-          s(:flow_flag, "data_collection", true,
-            s(:flow_flag, "data_collection", true,
-              s(:test,
-                s(:object, "nvm_dist_vcg"),
-                s(:name, "PostDRB"),
-                s(:number, 16120),
-                s(:on_fail,
-                  s(:continue)))))),
-        s(:flow_flag, "data_collection_all", true,
-          s(:test_result, "check_drb_completed", false,
-            s(:test,
-              s(:object, "nvm_dist_vcg_f"),
-              s(:name, "PostDRBFW"),
-              s(:number, 16290),
-              s(:on_fail,
-                s(:continue))))),
-        s(:flow_flag, "data_collection_all", true,
-          s(:test_result, "check_drb_completed", false,
-            s(:test,
-              s(:object, "nvm_dist_vcg_t"),
-              s(:name, "PostDRBTIFR"),
-              s(:number, 16460),
-              s(:on_fail,
-                s(:continue))))),
-        s(:flow_flag, "data_collection_all", true,
-          s(:test_result, "check_drb_completed", false,
-            s(:test,
-              s(:object, "nvm_dist_vcg_u"),
-              s(:name, "PostDRBUIFR"),
-              s(:number, 16630),
-              s(:on_fail,
-                s(:continue))))))
+    test :t1, id: :check_drb_completed
+    test :nvm_pass_rd_prb1_temp_old, name: :nvm_pass_rd_prb1_temp_old, number: 204016080, id: :check_prb1_new,
+                                     bin: 204, softbin: 204, if_failed: :check_drb_completed
+    if_failed :check_drb_completed do
+      test :nvm_pass_rd_prb1_temp, name: :nvm_pass_rd_prb1_temp, number: 204016100,
+                                       bin: 204, softbin: 204, if_failed: :check_prb1_new
+    end
+    if_failed :check_drb_completed do
+      if_enabled :data_collection do
+        test :nvm_dist_vcg, name: "PostDRB", number: 16120, continue: true, if_enabled: :data_collection
+      end
+    end
+    if_enabled :data_collection_all do
+      if_failed :check_drb_completed do
+        test :nvm_dist_vcg_f, name: "PostDRBFW", number: 16290, continue: true
+      end
+    end
+    if_enabled :data_collection_all do
+      if_failed :check_drb_completed do
+        test :nvm_dist_vcg_t, name: "PostDRBTIFR", number: 16460, continue: true
+      end
+    end
+    if_enabled :data_collection_all do
+      if_failed :check_drb_completed do
+        test :nvm_dist_vcg_u, name: "PostDRBUIFR", number: 16630, continue: true
+      end
+    end
 
-    flow(ast).ast.should == 
+    ast.should ==
       s(:flow,
         s(:name, "sort1"),
         s(:test,
           s(:object, "t1"),
           s(:id, "check_drb_completed"),
           s(:on_fail,
-            s(:set_run_flag, "check_drb_completed_FAILED", "auto_generated"),
-            s(:continue))),
-        s(:run_flag, "check_drb_completed_FAILED", true,
-          s(:test,
-            s(:object, "nvm_pass_rd_prb1_temp_old"),
-            s(:name, "nvm_pass_rd_prb1_temp_old"),
-            s(:number, 204016080),
-            s(:id, "check_prb1_new"),
-            s(:on_fail,
-              s(:set_result, "fail",
-                s(:bin, 204),
-                s(:softbin, 204)),
-              s(:set_run_flag,"check_prb1_new_FAILED", "auto_generated"),
-              s(:continue))),
-          s(:run_flag, "check_prb1_new_FAILED", true,
             s(:test,
-              s(:object, "nvm_pass_rd_prb1_temp"),
-              s(:name, "nvm_pass_rd_prb1_temp"),
-              s(:number, 204016100),
+              s(:object, "nvm_pass_rd_prb1_temp_old"),
+              s(:name, "nvm_pass_rd_prb1_temp_old"),
+              s(:number, 204016080),
+              s(:id, "check_prb1_new"),
               s(:on_fail,
-                s(:set_result, "fail",
-                  s(:bin, 204),
-                  s(:softbin, 204))))),
-          s(:flow_flag, "data_collection", true,
-            s(:test,
-              s(:object, "nvm_dist_vcg"),
-              s(:name, "PostDRB"),
-              s(:number, 16120),
-              s(:on_fail,
-                s(:continue)))),
-          s(:flow_flag, "data_collection_all", true,
-            s(:test,
-              s(:object, "nvm_dist_vcg_f"),
-              s(:name, "PostDRBFW"),
-              s(:number, 16290),
-              s(:on_fail,
-                s(:continue))),
-            s(:test,
-              s(:object, "nvm_dist_vcg_t"),
-              s(:name, "PostDRBTIFR"),
-              s(:number, 16460),
-              s(:on_fail,
-                s(:continue))),
-            s(:test,
-              s(:object, "nvm_dist_vcg_u"),
-              s(:name, "PostDRBUIFR"),
-              s(:number, 16630),
-              s(:on_fail,
-                s(:continue))))))
+                s(:test,
+                  s(:object, "nvm_pass_rd_prb1_temp"),
+                  s(:name, "nvm_pass_rd_prb1_temp"),
+                  s(:number, 204016100),
+                  s(:on_fail,
+                    s(:set_result, "fail",
+                      s(:bin, 204),
+                      s(:softbin, 204))),
+                  s(:id, "t1")))),
+            s(:if_enabled, "data_collection",
+              s(:test,
+                s(:object, "nvm_dist_vcg"),
+                s(:name, "PostDRB"),
+                s(:number, 16120),
+                s(:id, "t2"))),
+            s(:if_enabled, "data_collection_all",
+              s(:test,
+                s(:object, "nvm_dist_vcg_f"),
+                s(:name, "PostDRBFW"),
+                s(:number, 16290),
+                s(:id, "t3")),
+              s(:test,
+                s(:object, "nvm_dist_vcg_t"),
+                s(:name, "PostDRBTIFR"),
+                s(:number, 16460),
+                s(:id, "t4")),
+              s(:test,
+                s(:object, "nvm_dist_vcg_u"),
+                s(:name, "PostDRBUIFR"),
+                s(:number, 16630),
+                s(:id, "t5"))))))
   end
 
   it "embedded common rules test" do
-    ast = to_ast <<-END
-      (flow
-        (name "sort1")
-        (job "j1" true
-          (flow_flag "bitmap" true
-            (test
-              (object "test1"))))
-        (job "j2" true
-          (flow_flag "bitmap" true
-            (test
-              (object "test1")))))
-    END
+    if_job :j1 do
+      test :test1, if_enabled: :bitmap
+    end
+    if_job :j2 do
+      test :test2, if_enabled: :bitmap
+    end
 
-    optimized = to_ast <<-END
-      (flow
-        (name "sort1")
-        (flow_flag "bitmap" true
-          (job "j1" true
-            (test
-              (object "test1")))
-          (job "j2" true
-            (test
-              (object "test1")))))
-    END
-
-    flow(ast).ast.should == optimized
+    ast.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:if_enabled, "bitmap",
+          s(:if_job, "j1",
+            s(:test,
+              s(:object, "test1"),
+              s(:id, "t1"))),
+          s(:if_job, "j2",
+            s(:test,
+              s(:object, "test2"),
+              s(:id, "t2")))))
   end
 
   it 'test case from origen_testers' do
-    ast = 
-      s(:flow,
-        s(:name, "flow_control"),
-        s(:log, "Test nested conditions on a group"),
-        s(:test,
-          s(:object, "test1"),
-          s(:name, "nt1"),
-          s(:number, 0),
-          s(:id, "nt1"),
-          s(:on_fail,
-            s(:set_result, "fail",
-              s(:bin, 10)))),
-        s(:test_result, "nt1", false,
-          s(:test,
-            s(:object, "test2"),
-            s(:name, "nt2"),
-            s(:number, 0),
-            s(:id, "nt2"),
-            s(:on_fail,
-              s(:set_result, "fail",
-                s(:bin, 11))))),
-        s(:test_result, "nt2", true,
-          s(:group,
-            s(:name, "ntg1"),
-            s(:id, "ntg1"),
-            s(:test_result, "nt1", false,
-              s(:test,
-                s(:object, "test3"),
-                s(:name, "nt3"),
-                s(:number, 0),
-                s(:on_fail,
-                  s(:set_result, "fail",
-                    s(:bin, 12))))))),
-        s(:test_result, "nt2", false,
-          s(:group,
-            s(:name, "ntg2"),
-            s(:id, "ntg2"),
-            s(:test_result, "nt1", false,
-              s(:test,
-                s(:object, "test4"),
-                s(:name, "nt4"),
-                s(:number, 0),
-                s(:on_fail,
-                  s(:set_result, "fail",
-                    s(:bin, 13))))))))
+    log "Test nested conditions on a group"
+    test :test1, name: :nt1, number: 0, id: :nt1, bin: 10
+    test :test2, name: :nt2, number: 0, id: :nt2, bin: 11, if_failed: :nt1
+    if_passed :nt2 do
+      group "ntg1", id: :ntg1 do
+        test :test3, name: :nt3, number: 0, bin: 12, if_failed: :nt1
+      end
+    end
+    group "ntg2", id: :ntg2, if_failed: :nt2 do
+      test :test4, name: :nt4, number: 0, bin: 13, if_failed: :nt1
+    end
 
-    flow(ast).ast.should == 
+    ast.should ==
       s(:flow,
-        s(:name, "flow_control"),
+        s(:name, "sort1"),
         s(:log, "Test nested conditions on a group"),
         s(:test,
           s(:object, "test1"),
@@ -439,44 +281,177 @@ describe 'AST optimization' do
           s(:number, 0),
           s(:id, "nt1"),
           s(:on_fail,
-            s(:set_result, "fail",
-              s(:bin, 10)),
-            s(:set_run_flag, "nt1_FAILED", "auto_generated"),
-            s(:continue))),
-        s(:run_flag, "nt1_FAILED", true,
-          s(:test,
-            s(:object, "test2"),
-            s(:name, "nt2"),
-            s(:number, 0),
-            s(:id, "nt2"),
-            s(:on_fail,
-              s(:set_result, "fail",
-                s(:bin, 11)),
-              s(:continue),
-              s(:set_run_flag, "nt2_FAILED", "auto_generated")),
-            s(:on_pass,
-              s(:set_run_flag, "nt2_PASSED", "auto_generated"))),
-          s(:run_flag, "nt2_PASSED", true,
-            s(:group,
-              s(:name, "ntg1"),
-              s(:id, "ntg1"),
+            s(:test,
+              s(:object, "test2"),
+              s(:name, "nt2"),
+              s(:number, 0),
+              s(:id, "nt2"),
+              s(:on_fail,
+                s(:group,
+                  s(:name, "ntg2"),
+                  s(:id, "ntg2"),
+                  s(:test,
+                    s(:object, "test4"),
+                    s(:name, "nt4"),
+                    s(:number, 0),
+                    s(:on_fail,
+                      s(:set_result, "fail",
+                        s(:bin, 13))),
+                    s(:id, "t2")))),
+              s(:on_pass,
+                s(:group,
+                  s(:name, "ntg1"),
+                  s(:id, "ntg1"),
+                  s(:test,
+                    s(:object, "test3"),
+                    s(:name, "nt3"),
+                    s(:number, 0),
+                    s(:on_fail,
+                      s(:set_result, "fail",
+                        s(:bin, 12))),
+                    s(:id, "t1"))))))))
+  end
+
+  it "a test case where test3 was lost" do
+    test :test1, id: :ifallb1
+    test :test2, id: :ifallb2
+    if_all_failed [:ifallb1, :ifallb2] do
+      test :test3
+      test :test4
+    end
+
+    ast.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:test,
+          s(:object, "test1"),
+          s(:id, "ifallb1"),
+          s(:on_fail,
+            s(:set_flag, "ifallb1_FAILED", "auto_generated"))),
+        s(:test,
+          s(:object, "test2"),
+          s(:id, "ifallb2"),
+          s(:on_fail,
+            s(:if_flag, "ifallb1_FAILED",
               s(:test,
                 s(:object, "test3"),
-                s(:name, "nt3"),
-                s(:number, 0),
-                s(:on_fail,
-                  s(:set_result, "fail",
-                    s(:bin, 12)))))),
-          s(:run_flag, "nt2_FAILED", true,
-            s(:group,
-              s(:name, "ntg2"),
-              s(:id, "ntg2"),
+                s(:id, "t1")),
               s(:test,
                 s(:object, "test4"),
-                s(:name, "nt4"),
-                s(:number, 0),
-                s(:on_fail,
-                  s(:set_result, "fail",
-                    s(:bin, 13))))))))
+                s(:id, "t2"))))))
+  end
+
+  it "a test case that ended up with an additional render" do
+    render 'multi_bin;', if_flag: :my_flag
+    test :test1, on_fail: { render: 'multi_bin;' }, if_flag: :my_flag
+
+    ast.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:if_flag, "my_flag",
+          s(:render, "multi_bin;"),
+          s(:test,
+            s(:object, "test1"),
+            s(:on_fail,
+              s(:render, "multi_bin;")),
+            s(:id, "t1"))))
+  end
+
+  it "a test case that dropped a bin out" do
+    test :test1, id: :t1a
+
+    if_passed :t1a do
+      test :test2
+    end
+
+    if_failed :t1a do
+      test :test3
+      bin 10
+    end
+
+    ast.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:test,
+          s(:object, "test1"),
+          s(:id, "t1a"),
+          s(:on_pass,
+            s(:test,
+              s(:object, "test2"),
+              s(:id, "t1"))),
+          s(:on_fail,
+            s(:test,
+              s(:object, "test3"),
+              s(:id, "t2")),
+            s(:set_result, "fail",
+              s(:bin, 10)))))    
+  end
+
+  it "a test case which got it really confused" do
+    unless_enable "eword1" do
+      unless_enable "eword2" do
+        test :test1, if_enable: :small_flow
+        test :test2, if_enable: :small_flow
+        test :test1
+        test :test1
+        test :test1
+        test :test1
+        test :test1, if_enable: :small_flow
+        test :test2, if_enable: :small_flow       
+      end
+      if_enable "eword2" do
+        test :test1, if_enable: :small_flow
+        test :test2, if_enable: :small_flow
+        test :test1
+        test :test1
+        test :test1
+        test :test1
+        test :test1, if_enable: :small_flow
+        test :test2, if_enable: :small_flow       
+      end
+    end
+
+    ast(add_ids: false).should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:unless_enabled, "eword1",
+          s(:unless_enabled, "eword2",
+            s(:if_enabled, "small_flow",
+              s(:test,
+                s(:object, "test1")),
+              s(:test,
+                s(:object, "test2"))),
+            s(:test,
+              s(:object, "test1")),
+            s(:test,
+              s(:object, "test1")),
+            s(:test,
+              s(:object, "test1")),
+            s(:test,
+              s(:object, "test1")),
+            s(:if_enabled, "small_flow",
+              s(:test,
+                s(:object, "test1")),
+              s(:test,
+                s(:object, "test2")))),
+          s(:if_enabled, "eword2",
+            s(:if_enabled, "small_flow",
+              s(:test,
+                s(:object, "test1")),
+              s(:test,
+                s(:object, "test2"))),
+            s(:test,
+              s(:object, "test1")),
+            s(:test,
+              s(:object, "test1")),
+            s(:test,
+              s(:object, "test1")),
+            s(:test,
+              s(:object, "test1")),
+            s(:if_enabled, "small_flow",
+              s(:test,
+                s(:object, "test1")),
+              s(:test,
+                s(:object, "test2"))))))
   end
 end

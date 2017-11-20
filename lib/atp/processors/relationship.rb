@@ -11,49 +11,52 @@ module ATP
       class ExtractTestResults < Processor
         attr_reader :results
 
-        def on_test_result(node)
-          ids, state, *children = *node
+        def on_if_failed(node)
+          ids, *children = *node
           unless ids.is_a?(Array)
             ids = [ids]
           end
           ids.each do |id|
             results[id] ||= {}
-            if state
-              results[id][:passed] = true
-            else
-              results[id][:failed] = true
-            end
+            results[id][:failed] = true
           end
           process_all(children)
         end
+        alias_method :on_if_any_failed, :on_if_failed
+        alias_method :on_if_all_failed, :on_if_failed
 
-        def on_test_executed(node)
-          id, state, *children = *node
-          id, state = *node
-          results[id] ||= {}
-          results[id][:executed] = true
+        def on_if_passed(node)
+          ids, *children = *node
+          unless ids.is_a?(Array)
+            ids = [ids]
+          end
+          ids.each do |id|
+            results[id] ||= {}
+            results[id][:passed] = true
+          end
           process_all(children)
         end
+        alias_method :on_if_any_passed, :on_if_passed
+        alias_method :on_if_all_passed, :on_if_passed
+
+        def on_if_ran(node)
+          id, *children = *node
+          results[id] ||= {}
+          results[id][:ran] = true
+          process_all(children)
+        end
+        alias_method :on_unless_ran, :on_if_ran
 
         def results
           @results ||= {}.with_indifferent_access
         end
       end
 
-      def process(node)
-        # On first call extract the test_result nodes from the given AST,
-        # then process as normal thereafter
-        if @first_call_done
-          result = super
-        else
-          @first_call_done = true
-          t = ExtractTestResults.new
-          t.process(node)
-          @test_results = t.results || {}
-          result = super
-          @first_call_done = false
-        end
-        result
+      def run(node)
+        t = ExtractTestResults.new
+        t.process(node)
+        @test_results = t.results || {}
+        process(node)
       end
 
       def add_pass_flag(id, node)
@@ -61,7 +64,7 @@ module ATP
         node = node.ensure_node_present(:on_fail)
         node.updated(nil, node.children.map do |n|
           if n.type == :on_pass
-            n = n.add n2(:set_run_flag, "#{id}_PASSED", :auto_generated)
+            n = n.add node.updated(:set_flag, ["#{id}_PASSED", :auto_generated])
           elsif n.type == :on_fail
             n.ensure_node_present(:continue)
           else
@@ -74,7 +77,7 @@ module ATP
         node = node.ensure_node_present(:on_fail)
         node.updated(nil, node.children.map do |n|
           if n.type == :on_fail
-            n = n.add n2(:set_run_flag, "#{id}_FAILED", :auto_generated)
+            n = n.add node.updated(:set_flag, ["#{id}_FAILED", :auto_generated])
             n.ensure_node_present(:continue)
           else
             n
@@ -82,16 +85,27 @@ module ATP
         end)
       end
 
-      def add_executed_flag(id, node)
-        node = node.ensure_node_present(:on_fail)
-        node = node.ensure_node_present(:on_pass)
-        node.updated(nil, node.children.map do |n|
-          if n.type == :on_pass || n.type == :on_fail
-            n = n.add n2(:set_run_flag, "#{id}_RAN", :auto_generated)
+      def add_ran_flags(id, node)
+        set_flag = node.updated(:set_flag, ["#{id}_RAN", :auto_generated])
+        # For a group, set a flag immediately upon entry to the group to signal that
+        # it ran to later tests
+        if node.type == :group
+          name, id, *nodes = *node
+          if id.type == :id
+            nodes.unshift(set_flag)
+            nodes.unshift(id)
           else
-            n
+            nodes.unshift(id)
+            nodes.unshift(set_flag)
           end
-        end)
+          node.updated(nil, [name] + nodes)
+        # For a test, set a flag immediately after the referenced test has executed
+        # but don't change its pass/fail handling
+        elsif node.type == :test
+          node.updated(:inline, [node, set_flag])
+        else
+          fail "Don't know how to add ran flag to #{node.type}"
+        end
       end
 
       # Set flags depending on the result on tests which have dependents later
@@ -102,7 +116,7 @@ module ATP
         if test_results[nid]
           node = add_pass_flag(nid, node) if test_results[nid][:passed]
           node = add_fail_flag(nid, node) if test_results[nid][:failed]
-          node = add_executed_flag(nid, node) if test_results[nid][:executed]
+          node = add_ran_flags(nid, node) if test_results[nid][:ran]
         end
         if node.type == :group
           node.updated(nil, process_all(node))
@@ -112,26 +126,50 @@ module ATP
       end
       alias_method :on_group, :on_test
 
-      # Remove test_result nodes and replace with references to the flags set
-      # up stream by the parent node
-      def on_test_result(node)
-        children = node.children.dup
-        id = children.shift
-        state = children.shift
-        if state
-          n(:run_flag, [id_to_flag(id, 'PASSED'), true] + process_all(children))
-        else
-          n(:run_flag, [id_to_flag(id, 'FAILED'), true] + process_all(children))
+      def on_if_failed(node)
+        id, *children = *node
+        node.updated(:if_flag, [id_to_flag(id, 'FAILED')] + process_all(children))
+      end
+      alias_method :on_if_any_failed, :on_if_failed
+
+      def on_if_all_failed(node)
+        ids, *children = *node
+        ids.reverse_each.with_index do |id, i|
+          if i == 0
+            node = node.updated(:if_flag, [id_to_flag(id, 'FAILED')] + process_all(children))
+          else
+            node = node.updated(:if_flag, [id_to_flag(id, 'FAILED'), node])
+          end
         end
+        node
       end
 
-      # Remove test_result nodes and replace with references to the flags set
-      # up stream by the parent node
-      def on_test_executed(node)
-        children = node.children.dup
-        id = children.shift
-        state = children.shift
-        n(:run_flag, [id_to_flag(id, 'RAN'), state] + children)
+      def on_if_passed(node)
+        id, *children = *node
+        node.updated(:if_flag, [id_to_flag(id, 'PASSED')] + process_all(children))
+      end
+      alias_method :on_if_any_passed, :on_if_passed
+
+      def on_if_all_passed(node)
+        ids, *children = *node
+        ids.reverse_each.with_index do |id, i|
+          if i == 0
+            node = node.updated(:if_flag, [id_to_flag(id, 'PASSED')] + process_all(children))
+          else
+            node = node.updated(:if_flag, [id_to_flag(id, 'PASSED'), node])
+          end
+        end
+        node
+      end
+
+      def on_if_ran(node)
+        id, *children = *node
+        node.updated(:if_flag, [id_to_flag(id, 'RAN')] + process_all(children))
+      end
+
+      def on_unless_ran(node)
+        id, *children = *node
+        node.updated(:unless_flag, [id_to_flag(id, 'RAN')] + process_all(children))
       end
 
       # Returns the ID of the give test node (if any), caller is responsible

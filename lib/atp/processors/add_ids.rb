@@ -25,6 +25,7 @@ module ATP
           process_all(node)
         end
       end
+      alias_method :on_group, :on_test
 
       def on_id(node)
         if @add_ids

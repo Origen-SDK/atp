@@ -2,9 +2,8 @@ require 'ast'
 module ATP
   module AST
     class Node < ::AST::Node
-      include Factories
-
       attr_reader :file, :line_number, :description
+      attr_accessor :id
 
       def initialize(type, children = [], properties = {})
         # Always use strings instead of symbols in the AST, makes serializing
@@ -21,6 +20,11 @@ module ATP
         end
       end
 
+      # Returns true if the node carries source file data, retrieve it via the source method
+      def has_source?
+        !!file
+      end
+
       # Create a new node from the given S-expression (a string)
       def self.from_sexp(sexp)
         @parser ||= Parser.new
@@ -29,14 +33,14 @@ module ATP
 
       # Adds an empty node of the given type to the children unless another
       # node of the same type is already present
-      def ensure_node_present(type, child_nodes = nil)
+      def ensure_node_present(type, *child_nodes)
         if children.any? { |n| n.type == type }
           self
         else
-          if child_nodes
-            node = n(type, *child_nodes)
+          if !child_nodes.empty?
+            node = updated(type, child_nodes)
           else
-            node = n0(type)
+            node = updated(type, [])
           end
           updated(nil, children + [node])
         end
@@ -68,14 +72,19 @@ module ATP
         updated(nil, children - nodes)
       end
 
-      # Returns the first child node of the given type that is found
-      def find(type)
-        children.find { |c| c.try(:type) == type }
+      # Returns the first child node of the given type(s) that is found
+      def find(*types)
+        children.find { |c| types.include?(c.try(:type)) }
       end
 
       # Returns an array containing all child nodes of the given type(s)
       def find_all(*types)
         children.select { |c| types.include?(c.try(:type)) }
+      end
+
+      # Returns an array containing all flags which are set within the given node
+      def set_flags
+        Processors::ExtractSetFlags.new.run(self)
       end
     end
   end

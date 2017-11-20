@@ -44,22 +44,6 @@ module ATP
       node.updated(nil, process_all(node.children))
     end
 
-    def n(type, children)
-      ATP::AST::Node.new(type, children)
-    end
-
-    def n0(type)
-      n(type, [])
-    end
-
-    def n1(type, arg)
-      n(type, [arg])
-    end
-
-    def n2(type, arg1, arg2)
-      n(type, [arg1, arg2])
-    end
-
     def extract_volatiles(flow)
       @volatiles = {}
       if v = flow.find(:volatile)

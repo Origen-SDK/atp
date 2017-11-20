@@ -1,55 +1,69 @@
 require 'spec_helper'
 
 describe 'The AST validators' do
+  include ATP::FlowAPI
+
+  before :each do
+    ATP::Validator.testing = true
+    self.atp = ATP::Program.new.flow(:sort1) 
+  end
 
   def name
     "Validators spec"
   end
 
+  it "duplicate IDs are caught" do
+    test :test1, id: :t1
+    test :test2
+    test :test3, id: :t1
+
+    expect { atp.ast }.to raise_error(SystemExit).
+      and output(/Test ID t1 is defined more than once in flow sort1/).to_stdout
+  end
+
+  it "missing IDs are caught" do
+    test :test1
+    test :test2
+    test :test3, if_failed: :t1
+
+    expect { atp.ast }.to raise_error(SystemExit).
+      and output(/Test ID t1 is referenced in flow sort1/).to_stdout
+  end
+
   it "positive and negative job conditions can't be mixed" do
-    validator = ATP::Validators::Jobs.new(self)
+    test :test1, if_job: "p1"
+    test :test2, unless_job: "p2"
 
-    ast = s(:flow,
-            s(:name, "sort1"),
-            s(:job, "p1", true,
-              s(:test,
-                s(:name, "test1"),
-                s(:id, "t1"))),
-            s(:job, "p2", false,
-              s(:test,
-                s(:name, "test2"),
-                s(:id, "t2"))))
+    atp.ast(add_ids: false).should ==
+        s(:flow,
+          s(:name, "sort1"),
+          s(:if_job, "p1",
+            s(:test,
+              s(:object, "test1"))),
+          s(:unless_job, "p2",
+            s(:test,
+              s(:object, "test2"))))
 
-    validator.test_process(ast).should == false  
+    if_job "p1" do
+      test :test3
+      test :test4, unless_job: "p2"
+    end
 
-    ast = s(:flow,
-            s(:name, "sort1"),
-            s(:job, "p1", true,
-              s(:test,
-                s(:name, "test1"),
-                s(:id, "t1")),
-              s(:job, "p2", false,
-                s(:test,
-                  s(:name, "test2"),
-                  s(:id, "t2")))))
-
-    validator.test_process(ast).should == true
+    expect { atp.ast }.to raise_error(SystemExit).
+      and output(/if_job and unless_job conditions cannot both be applied to the same tests/).to_stdout
   end
 
-  it "job names can't start with a negative symbol" do
-    validator = ATP::Validators::Jobs.new(self)
-    ast = s(:flow,
-            s(:name, "sort1"),
-            s(:job, "!p1", true,
-              s(:test,
-                s(:name, "test1"),
-                s(:id, "t1"))),
-            s(:job, "~p2", false,
-              s(:test,
-                s(:name, "test2"),
-                s(:id, "t2"))))
+  it "if_job names can't start with a negative symbol" do
+    test :test1, if_job: '!p1'
 
-    validator.test_process(ast).should == true
+    expect { atp.ast }.to raise_error(SystemExit).
+      and output(/Job names should not be negated, use unless_job/).to_stdout
   end
 
+  it "unless_job names can't start with a negative symbol" do
+    test :test1, unless_job: '!p1'
+
+    expect { atp.ast }.to raise_error(SystemExit).
+      and output(/Job names should not be negated, use unless_job/).to_stdout
+  end
 end
