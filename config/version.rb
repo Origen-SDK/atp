@@ -1,6 +1,6 @@
 module ATP
-  MAJOR = 0
-  MINOR = 8
+  MAJOR = 1
+  MINOR = 0
   BUGFIX = 0
   DEV = nil
 
