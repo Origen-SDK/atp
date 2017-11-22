@@ -277,10 +277,14 @@ module ATP
         end
 
         if lims = options[:limit] || options[:limits]
-          lims = [lims] unless lims.is_a?(Array)
-          lims.each do |l|
-            if l.is_a?(Hash)
-              children << limit(l[:value], l[:rule], l[:unit] || l[:units])
+          if lims == :none || lims == 'none'
+            children << n0(:nolimits)
+          else
+            lims = [lims] unless lims.is_a?(Array)
+            lims.each do |l|
+              if l.is_a?(Hash)
+                children << n(:limit, [l[:value], l[:rule], l[:unit] || l[:units], l[:selector]])
+              end
             end
           end
         end
@@ -660,14 +664,6 @@ module ATP
         n(:level, [name, value, units])
       else
         n2(:level, name, value)
-      end
-    end
-
-    def limit(value, rule, units = nil)
-      if units
-        n(:limit, [value, rule, units])
-      else
-        n2(:limit, value, rule)
       end
     end
 

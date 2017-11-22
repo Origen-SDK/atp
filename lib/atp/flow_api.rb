@@ -22,5 +22,35 @@ module ATP
     end
 
     alias_method :logprint, :log
+
+    def lo_limit(value, options)
+      {
+        value:    value,
+        rule:     options[:rule] || :gte,
+        units:    options[:units],
+        selector: options[:selector] || options[:test_mode]
+      }
+    end
+
+    def hi_limit(value, options)
+      {
+        value:    value,
+        rule:     options[:rule] || :lte,
+        units:    options[:units],
+        selector: options[:selector] || options[:test_mode]
+      }
+    end
+
+    def limit(value, options)
+      unless options[:rule]
+        fail 'You must supply option :rule (e.g. rule: :gt) when calling the limit helper'
+      end
+      {
+        value:    value,
+        rule:     options[:rule] || :lt,
+        units:    options[:units],
+        selector: options[:selector] || options[:test_mode]
+      }
+    end
   end
 end
