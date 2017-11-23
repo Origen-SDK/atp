@@ -50,4 +50,44 @@ describe 'The adjacent if combiner' do
             s(:object, "test2"))))
 
   end
+
+  it "should combine adjacent nodes based on a volatile flag, if the first node cannot modify the flag" do
+    volatile :my_flag
+    # This section should combine, since does not contain any tests
+    if_flag :my_flag do
+      bin 1
+    end
+    unless_flag :my_flag do
+      bin 2
+    end
+    test :test1
+    # This section should not combine, since does contain a tests which could potentially
+    # change the state of the flag
+    if_flag :my_flag do
+      test :test1
+    end
+    unless_flag :my_flag do
+      bin 2
+    end
+
+    ast.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:volatile,
+          s(:flag, "my_flag")),
+        s(:if_flag, "my_flag",
+          s(:set_result, "fail",
+            s(:bin, 1)),
+          s(:else,
+            s(:set_result, "fail",
+              s(:bin, 2)))),
+        s(:test,
+          s(:object, "test1")),
+        s(:if_flag, "my_flag",
+          s(:test,
+            s(:object, "test1"))),
+        s(:unless_flag, "my_flag",
+          s(:set_result, "fail",
+            s(:bin, 2))))
+  end
 end

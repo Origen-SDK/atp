@@ -86,6 +86,13 @@ module ATP
       def set_flags
         Processors::ExtractSetFlags.new.run(self)
       end
+
+      # Returns true if the node contains any nodes of the given type(s) of if any
+      # of its children do.
+      # To consider only direct children of this node use: node.find_all(*types).empty?
+      def contains?(*types)
+        !Extractor.new.process(self, types).empty?
+      end
     end
   end
 end
