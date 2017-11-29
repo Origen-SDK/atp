@@ -102,4 +102,23 @@ describe 'The flag optimizer' do
             s(:set_result, "fail",
               s(:bin, 10)))))
   end
+
+  it "optionally doesn't eliminate flags on tests with a continue" do
+    test :test1, id: :t1
+    test :test2, if_failed: :t1
+
+    ast(optimize_flags_when_continue: false).should == 
+      s(:flow,
+        s(:name, "sort1"),
+        s(:test,
+          s(:object, "test1"),
+          s(:id, "t1"),
+          s(:on_fail,
+            s(:set_flag, "t1_FAILED", "auto_generated"),
+            s(:continue))),
+        s(:if_flag, "t1_FAILED",
+          s(:test,
+            s(:object, "test2"))))
+  end
+
 end

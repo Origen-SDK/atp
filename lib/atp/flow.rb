@@ -98,17 +98,21 @@ module ATP
     # used to build and represent the given test flow
     def ast(options = {})
       options = {
-        apply_relationships: true,
+        apply_relationships:          true,
         # Supply a unique ID to append to all IDs
-        unique_id:           nil,
+        unique_id:                    nil,
         # Set to :smt, or :igxl
-        optimization:        :runner,
+        optimization:                 :runner,
+        # When true, will remove set_result nodes in an on_fail branch which contains a continue
+        implement_continue:           true,
+        # When false, this will not optimize the use of a flag by nesting a dependent test within
+        # the parent test's on_fail branch if the on_fail contains a continue
+        optimize_flags_when_continue: true,
         # These options are not intended for application use, but provide the ability to
         # turn off certain processors during test cases
-        add_ids:             true,
-        optimize_flags:      true,
-        one_flag_per_test:   true,
-        implement_continue:  true
+        add_ids:                      true,
+        optimize_flags:               true,
+        one_flag_per_test:            true
       }.merge(options)
       ###############################################################################
       ## Common pre-processing and validation
@@ -132,7 +136,9 @@ module ATP
         unless options[:optimization] == :runner
           ast = Processors::ContinueImplementer.new.run(ast) if options[:implement_continue]
         end
-        ast = Processors::FlagOptimizer.new.run(ast) if options[:optimize_flags]
+        if options[:optimize_flags]
+          ast = Processors::FlagOptimizer.new.run(ast, optimize_when_continue: options[:optimize_flags_when_continue])
+        end
         ast = Processors::AdjacentIfCombiner.new.run(ast)
 
       ###############################################################################
@@ -239,6 +245,10 @@ module ATP
         if options.delete(:continue)
           options[:on_fail] ||= {}
           options[:on_fail][:continue] = true
+        end
+        if options.delete(:delayed)
+          options[:on_fail] ||= {}
+          options[:on_fail][:delayed] = true
         end
         if f = options.delete(:flag_pass)
           options[:on_pass] ||= {}
@@ -621,6 +631,7 @@ module ATP
           children << set_flag_node(options[:set_run_flag] || options[:set_flag])
         end
         children << n0(:continue) if options[:continue]
+        children << n0(:delayed) if options[:delayed]
         children << n1(:render, options[:render]) if options[:render]
         n(:on_fail, children)
       end

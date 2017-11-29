@@ -298,4 +298,65 @@ describe 'The Relationship Processor' do
           s(:test,
             s(:object, "test4"))))
   end
+
+  it "should not add continue to the parent test if it is already set to :delayed" do
+    test :test1, id: :t1
+    test :test2, id: :t2, bin: 10, delayed: true
+    test :test3, if_passed: :t1
+    test :test4, if_passed: :t2
+    test :test5, if_failed: :t2
+
+    atp.raw.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:test,
+          s(:object, "test1"),
+          s(:id, :t1)),
+        s(:test,
+          s(:object, "test2"),
+          s(:id, :t2),
+          s(:on_fail,
+            s(:set_result, "fail",
+              s(:bin, 10)),
+            s(:delayed))),
+        s(:if_passed, :t1,
+          s(:test,
+            s(:object, "test3"))),
+        s(:if_passed, :t2,
+          s(:test,
+            s(:object, "test4"))),
+        s(:if_failed, :t2,
+          s(:test,
+            s(:object, "test5"))))
+
+    ast.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:test,
+          s(:object, "test1"),
+          s(:id, :t1),
+          s(:on_pass,
+            s(:set_flag, "t1_PASSED", "auto_generated")),
+          s(:on_fail,
+            s(:continue))),
+        s(:test,
+          s(:object, "test2"),
+          s(:id, :t2),
+          s(:on_fail,
+            s(:set_result, "fail",
+              s(:bin, 10)),
+            s(:delayed),
+            s(:set_flag, "t2_FAILED", "auto_generated")),
+          s(:on_pass,
+            s(:set_flag, "t2_PASSED", "auto_generated"))),
+        s(:if_flag, "t1_PASSED",
+          s(:test,
+            s(:object, "test3"))),
+        s(:if_flag, "t2_PASSED",
+          s(:test,
+            s(:object, "test4"))),
+        s(:if_flag, "t2_FAILED",
+          s(:test,
+            s(:object, "test5"))))
+  end
 end
