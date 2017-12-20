@@ -7,6 +7,7 @@ describe 'general AST optimization test cases' do
   include ATP::FlowAPI
 
   before :each do
+    ATP::Validator.testing = true
     self.atp = ATP::Program.new.flow(:sort1) 
   end
 
@@ -472,9 +473,33 @@ describe 'general AST optimization test cases' do
       end
     }
 
+    expect { atp.ast }.to raise_error(SystemExit).
+      and output(/if_flag and unless_flag conditions cannot be nested and refer to the same flag/).to_stdout
+  end
+
+  it "Same test as above with volatile flag" do
+    volatile "TestFlag"
+    test :test1, id: :t1, on_fail: ->{
+      if_flag "TestFlag" do
+        bin 1
+      end
+      unless_flag "TestFlag" do
+        test :test2, id: :t2, on_fail: ->{
+          if_flag "TestFlag" do
+            bin 1
+          end
+        }
+        unless_flag "TestFlag" do
+          bin 2, if_failed: :t2
+        end
+      end
+    }
+
     ast.should ==
       s(:flow,
         s(:name, "sort1"),
+        s(:volatile,
+          s(:flag, "TestFlag")),
         s(:test,
           s(:object, "test1"),
           s(:id, "t1"),
@@ -489,10 +514,10 @@ describe 'general AST optimization test cases' do
                   s(:on_fail,
                     s(:if_flag, "TestFlag",
                       s(:set_result, "fail",
-                        s(:bin, 1))))),
-                s(:if_failed, "t2",
-                  s(:set_result, "fail",
-                    s(:bin, 2))))))))
+                        s(:bin, 1)),
+                      s(:else,
+                        s(:set_result, "fail",
+                          s(:bin, 2)))))))))))
   end
 
   it "A test case where the if_passed/if_failed wasn't rendering properly" do
@@ -524,9 +549,7 @@ describe 'general AST optimization test cases' do
                     s(:object, "test2"),
                     s(:id, "t2"),
                     s(:on_fail,
-                      s(:set_flag, "t2_FAILED", "auto_generated"))),
-                  s(:if_flag, "t2_FAILED",
-                    s(:set_result, "fail",
-                      s(:bin, 3)))))))))
+                      s(:set_result, "fail",
+                        s(:bin, 3))))))))))
   end
 end
