@@ -119,6 +119,7 @@ module ATP
       # Set flags depending on the result on tests which have dependents later
       # in the flow
       def on_test(node)
+        node = node.updated(nil, process_all(node.children))
         nid = id(node)
         # If this test has a dependent
         if test_results[nid]
@@ -126,11 +127,7 @@ module ATP
           node = add_fail_flag(nid, node) if test_results[nid][:failed]
           node = add_ran_flags(nid, node) if test_results[nid][:ran]
         end
-        if node.type == :group
-          node.updated(nil, process_all(node))
-        else
-          node
-        end
+        node
       end
       alias_method :on_group, :on_test
 
