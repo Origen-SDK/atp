@@ -454,4 +454,79 @@ describe 'general AST optimization test cases' do
               s(:test,
                 s(:object, "test2"))))))
   end
+
+  it "A test case where the nested if_failed flag wasn't rendering" do
+    test :test1, id: :t1, on_fail: ->{
+      if_flag "TestFlag" do
+        bin 1
+      end
+      unless_flag "TestFlag" do
+        test :test2, id: :t2, on_fail: ->{
+          if_flag "TestFlag" do
+            bin 1
+          end
+        }
+        unless_flag "TestFlag" do
+          bin 2, if_failed: :t2
+        end
+      end
+    }
+
+    ast.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:test,
+          s(:object, "test1"),
+          s(:id, "t1"),
+          s(:on_fail,
+            s(:if_flag, "TestFlag",
+              s(:set_result, "fail",
+                s(:bin, 1)),
+              s(:else,
+                s(:test,
+                  s(:object, "test2"),
+                  s(:id, "t2"),
+                  s(:on_fail,
+                    s(:if_flag, "TestFlag",
+                      s(:set_result, "fail",
+                        s(:bin, 1))))),
+                s(:if_failed, "t2",
+                  s(:set_result, "fail",
+                    s(:bin, 2))))))))
+  end
+
+  it "A test case where the if_passed/if_failed wasn't rendering properly" do
+    test :test1, id: :t1
+    if_failed :t1, then: ->{
+      bin 2
+    }, else: ->{
+      if_flag "TestFlag", then: ->{ bin 1 }, else: ->{
+        test :test2, id: :t2
+        bin 3, if_failed: :t2
+      }
+    }
+    
+    ast.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:test,
+          s(:object, "test1"),
+          s(:id, "t1"),
+          s(:on_fail,
+            s(:set_result, "fail",
+              s(:bin, 2)),
+            s(:else,
+              s(:if_flag, "TestFlag",
+                s(:set_result, "fail",
+                  s(:bin, 1)),
+                s(:else,
+                  s(:test,
+                    s(:object, "test2"),
+                    s(:id, "t2"),
+                    s(:on_fail,
+                      s(:set_flag, "t2_FAILED", "auto_generated"))),
+                  s(:if_flag, "t2_FAILED",
+                    s(:set_result, "fail",
+                      s(:bin, 3)))))))))
+  end
 end

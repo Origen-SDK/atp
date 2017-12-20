@@ -19,8 +19,8 @@ describe 'Test nodes' do
          s(:name, "sort1"),
          s(:test,
            s(:object, "test1"),
-           s(:limit, 5, "lte"),
-           s(:limit, 1, "gt", "mV")))
+           s(:limit, 5, "lte", nil, nil),
+           s(:limit, 1, "gt", "mV", nil)))
   end
 
   it "can capture target pin information" do
@@ -111,8 +111,8 @@ describe 'Test nodes' do
            s(:object, "test1"),
            s(:sub_test,
              s(:object, "test1_s1"),
-             s(:limit, 5, "lte"),
-             s(:limit, 1, "gt", "mV")),
+             s(:limit, 5, "lte", nil, nil),
+             s(:limit, 1, "gt", "mV", nil)),
            s(:sub_test,
              s(:object, "test1_s2"),
              s(:on_fail,

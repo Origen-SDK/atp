@@ -25,7 +25,7 @@ module ATP
     #           s(:name, "test2")))))
     #
     class FlagOptimizer < Processor
-      attr_reader :run_flag_table
+      attr_reader :run_flag_table, :optimize_when_continue
 
       class ExtractRunFlagTable < Processor
         # Hash table of run_flag name with number of times used
@@ -53,7 +53,11 @@ module ATP
         alias_method :on_unless_flag, :on_if_flag
       end
 
-      def run(node)
+      def run(node, options = {})
+        options = {
+          optimize_when_continue: true
+        }.merge(options)
+        @optimize_when_continue = options[:optimize_when_continue]
         # Pre-process the AST for # of occurrences of each run-flag used
         t = ExtractRunFlagTable.new
         t.process(node)
@@ -124,7 +128,10 @@ module ATP
       end
 
       def can_be_combined?(node1, node2)
-        if node1.type == :test && (node2.type == :if_flag || node2.type == :unless_flag)
+        if node1.type == :test && (node2.type == :if_flag || node2.type == :unless_flag) &&
+           # Don't optimize tests which are marked as continue if told not to
+           !(node1.find(:on_fail) && node1.find(:on_fail).find(:continue) && !optimize_when_continue)
+
           if node1.find_all(:on_fail, :on_pass).any? do |node|
             if n = node.find(:set_flag)
               # Inline instead of setting a flag if...
