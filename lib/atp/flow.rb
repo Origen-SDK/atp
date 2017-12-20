@@ -121,6 +121,7 @@ module ATP
       Validators::DuplicateIDs.new(self).run(ast)
       Validators::MissingIDs.new(self).run(ast)
       Validators::Jobs.new(self).run(ast)
+      Validators::Flags.new(self).run(ast)
       # Ensure everything has an ID, this helps later if condition nodes need to be generated
       ast = Processors::AddIDs.new.run(ast) if options[:add_ids]
       ast = Processors::FlowID.new.run(ast, options[:unique_id]) if options[:unique_id]
