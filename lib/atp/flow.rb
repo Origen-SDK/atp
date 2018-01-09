@@ -193,6 +193,17 @@ module ATP
       @pipeline[0] = add_volatile_flags(@pipeline[0], flags)
     end
 
+    # Record a description for a bin number
+    def describe_bin(number, description, options = {})
+      @pipeline[0] = add_bin_description(@pipeline[0], number, description, type: :hard)
+    end
+
+    # Record a description for a softbin number
+    def describe_soft_bin(number, description, options = {})
+      @pipeline[0] = add_bin_description(@pipeline[0], number, description, type: :soft)
+    end
+    alias_method :describe_softbin, :describe_soft_bin
+
     # Group all tests generated within the given block
     #
     # @example
@@ -722,6 +733,27 @@ module ATP
       end
       v = v.updated(nil, v.children + new)
       node.updated(nil, [name, v] + nodes)
+    end
+
+    # Ensures the flow ast has a bin descriptions node, then adds the
+    # given description to it
+    def add_bin_description(node, number, description, options)
+      @existing_bin_descriptions ||= { soft: {}, hard: {} }
+      return node if @existing_bin_descriptions[options[:type]][number]
+      @existing_bin_descriptions[options[:type]][number] = true
+      name, *nodes = *node
+      if nodes[0] && nodes[0].type == :volatile
+        v = nodes.shift
+      else
+        v = nil
+      end
+      if nodes[0] && nodes[0].type == :bin_descriptions
+        d = nodes.shift
+      else
+        d = n0(:bin_descriptions)
+      end
+      d = d.updated(nil, d.children + [n2(options[:type], number, description)])
+      node.updated(nil, [name, v, d].compact + nodes)
     end
 
     def n(type, children, options = {})

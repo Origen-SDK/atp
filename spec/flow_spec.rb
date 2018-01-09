@@ -314,5 +314,49 @@ describe 'The flow builder API' do
         context_changed?(if_enable: 'blah').should == false
       end
     end
+
+    it 'can capture volatile flags and bin descriptions' do
+      self.atp = ATP::Program.new.flow(:sort1) 
+      volatile :flag1, :flag2
+      volatile :flag3
+
+      atp.raw.should ==
+        s(:flow,
+          s(:name, "sort1"),
+          s(:volatile,
+            s(:flag, "flag1"),
+            s(:flag, "flag2"),
+            s(:flag, "flag3"))) 
+
+      self.atp = ATP::Program.new.flow(:sort1) 
+      describe_bin 10, 'Bin10'
+      describe_softbin 100, 'Soft Bin100'
+
+      atp.raw.should ==
+        s(:flow,
+          s(:name, "sort1"),
+          s(:bin_descriptions,
+            s(:hard, 10, "Bin10"),
+            s(:soft, 100, "Soft Bin100")))
+
+      # Test case for both
+
+      self.atp = ATP::Program.new.flow(:sort1) 
+      volatile :flag1, :flag2
+      volatile :flag3
+      describe_bin 10, 'Bin10'
+      describe_softbin 100, 'Soft Bin100'
+
+      atp.raw.should ==
+        s(:flow,
+          s(:name, "sort1"),
+          s(:volatile,
+            s(:flag, "flag1"),
+            s(:flag, "flag2"),
+            s(:flag, "flag3")), 
+          s(:bin_descriptions,
+            s(:hard, 10, "Bin10"),
+            s(:soft, 100, "Soft Bin100")))
+    end
   end
 end
