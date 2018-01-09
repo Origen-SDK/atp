@@ -464,6 +464,10 @@ module ATP
       "<ATP::Flow:#{object_id} #{name}>"
     end
 
+    def ids
+      ATP::AST::Extractor.new.process(raw, [:id]).map { |node| node.to_a[0] }
+    end
+
     private
 
     def flow_control_method(name, flag, options = {}, &block)

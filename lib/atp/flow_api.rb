@@ -9,7 +9,7 @@ module ATP
     end
 
     ([:test, :bin, :pass, :continue, :cz, :log, :sub_test, :volatile, :set_flag, :enable, :disable, :render,
-      :context_changed?] +
+      :context_changed?, :ids] +
       ATP::Flow::CONDITION_KEYS.keys).each do |method|
       define_method method do |*args, &block|
         options = args.pop if args.last.is_a?(Hash)
@@ -17,7 +17,7 @@ module ATP
         add_meta!(options) if respond_to?(:add_meta!, true)
         add_description!(options) if respond_to?(:add_description!, true)
         args << options
-        atp.send(method, *args, &block)
+        [:ids].include?(method) ? atp.send(method) : atp.send(method, *args, &block)
       end
     end
 
