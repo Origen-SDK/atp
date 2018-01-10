@@ -464,7 +464,7 @@ module ATP
       "<ATP::Flow:#{object_id} #{name}>"
     end
 
-    def ids
+    def ids(options = {})
       ATP::AST::Extractor.new.process(raw, [:id]).map { |node| node.to_a[0] }
     end
 

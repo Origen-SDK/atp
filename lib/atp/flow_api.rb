@@ -17,7 +17,7 @@ module ATP
         add_meta!(options) if respond_to?(:add_meta!, true)
         add_description!(options) if respond_to?(:add_description!, true)
         args << options
-        [:ids].include?(method) ? atp.send(method) : atp.send(method, *args, &block)
+        atp.send(method, *args, &block)
       end
     end
 
