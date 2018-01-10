@@ -314,5 +314,14 @@ describe 'The flow builder API' do
         context_changed?(if_enable: 'blah').should == false
       end
     end
+    
+    it 'can return a list of test IDs used within the flow' do
+      atp.ids.should == []
+      test :test1, id: :t1
+      test :test2, id: "T2"
+      test :test3, id: "t1"
+      atp.ids.should == ['t1', 'T2', 't1']
+      atp.ids.should == ids
+    end
   end
 end
