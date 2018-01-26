@@ -257,9 +257,9 @@ module ATP
           options[:on_fail] ||= {}
           options[:on_fail][:continue] = true
         end
-        if options.delete(:delayed)
+        if options.key?(:delayed)
           options[:on_fail] ||= {}
-          options[:on_fail][:delayed] = true
+          options[:on_fail][:delayed] = options.delete(:delayed)
         end
         if f = options.delete(:flag_pass)
           options[:on_pass] ||= {}
@@ -642,7 +642,7 @@ module ATP
           children << set_flag_node(options[:set_run_flag] || options[:set_flag])
         end
         children << n0(:continue) if options[:continue]
-        children << n0(:delayed) if options[:delayed]
+        children << n1(:delayed, !!options[:delayed]) if options.key?(:delayed)
         children << n1(:render, options[:render]) if options[:render]
         n(:on_fail, children)
       end

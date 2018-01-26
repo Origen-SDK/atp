@@ -66,7 +66,8 @@ module ATP
           if n.type == :on_pass
             n = n.add node.updated(:set_flag, ["#{id}_PASSED", :auto_generated])
           elsif n.type == :on_fail
-            if n.find(:delayed)
+            delayed = n.find(:delayed)
+            if delayed && delayed.to_a[0]
               n
             else
               n.ensure_node_present(:continue)
@@ -82,7 +83,8 @@ module ATP
         node.updated(nil, node.children.map do |n|
           if n.type == :on_fail
             n = n.add node.updated(:set_flag, ["#{id}_FAILED", :auto_generated])
-            if n.find(:delayed)
+            delayed = n.find(:delayed)
+            if delayed && delayed.to_a[0]
               n
             else
               n.ensure_node_present(:continue)
