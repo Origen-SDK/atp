@@ -90,7 +90,8 @@ module ATP
       def safe_to_combine?(node1, node2)
         # Nodes won't be collapsed if node1 touches the shared run flag, i.e. if there is any chance
         # that by the time it would naturally execute node2, the flag could have been changed by node1
-        !volatile?(node1.to_a[0]) && !SetRunFlagFinder.new.contains?(node1, node1.to_a[0])
+        (!volatile?(node1.to_a[0]) || (volatile?(node1.to_a[0]) && !node1.contains?(:test))) &&
+          !SetRunFlagFinder.new.contains?(node1, node1.to_a[0])
       end
     end
   end

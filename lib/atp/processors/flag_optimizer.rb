@@ -74,11 +74,16 @@ module ATP
       alias_method :on_group, :on_named_collection
       alias_method :on_unless_flag, :on_named_collection
 
+      def on_unnamed_collection(node)
+        node.updated(nil, optimize(process_all(node.children)))
+      end
+      alias_method :on_else, :on_unnamed_collection
+
       def on_if_flag(node)
         name, *nodes = *node
         # Remove this node and return its children if required
         if if_run_flag_to_remove.last == node.to_a[0]
-          node.updated(:inline, node.to_a[1..-1])
+          node.updated(:inline, optimize(process_all(node.to_a[1..-1])))
         else
           node.updated(nil, [name] + optimize(process_all(nodes)))
         end
@@ -148,7 +153,7 @@ module ATP
       end
 
       def combine(node1, node2)
-        nodes_to_inline_on_pass_or_fail << node2
+        nodes_to_inline_on_pass_or_fail << node2 # .updated(nil, process_all(node2.children))
         node1 = node1.updated(nil, process_all(node1.children))
         nodes_to_inline_on_pass_or_fail.pop
         node1

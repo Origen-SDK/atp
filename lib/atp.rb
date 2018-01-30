@@ -79,6 +79,7 @@ module ATP
     autoload :MissingIDs, 'atp/validators/missing_ids'
     autoload :Condition, 'atp/validators/condition'
     autoload :Jobs, 'atp/validators/jobs'
+    autoload :Flags, 'atp/validators/flags'
   end
 
   # Formatters are run on the processed AST to display the flow or to render
