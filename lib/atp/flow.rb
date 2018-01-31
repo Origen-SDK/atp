@@ -298,11 +298,18 @@ module ATP
           end
         end
 
-        if lims = options[:limit] || options[:limits]
+        lims = options[:limit] || options[:limits]
+        if lims || options[:lo] || options[:low] || options[:hi] || options[:high]
           if lims == :none || lims == 'none'
             children << n0(:nolimits)
           else
-            lims = [lims] unless lims.is_a?(Array)
+            lims = Array(lims) unless lims.is_a?(Array)
+            if lo = options[:lo] || options[:low]
+              lims << { value: lo, rule: :gte }
+            end
+            if hi = options[:hi] || options[:high]
+              lims << { value: hi, rule: :lte }
+            end
             lims.each do |l|
               if l.is_a?(Hash)
                 children << n(:limit, [l[:value], l[:rule], l[:unit] || l[:units], l[:selector]])
