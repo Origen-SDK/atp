@@ -1,3 +1,18 @@
+<a class="anchor release_tag" name="v1_1_0"></a>
+<h1><a href="#v1_1_0">Tag: v1.1.0</a></h1>
+
+##### Branch: 'master'
+
+##### by Stephen McGinty on 31-Jan-2018 16:53PM
+
+
+* Various optimization improvements and bug fixes
+* Improved limit node, allowing value, rule, unit and selector to be represented
+* Added delayed node which can be set to true or false to represent when a test's binning
+  should be delayed or not, e.g. overon=on for V93K 
+* Added ability to capture bin descriptions on their own, i.e. not as part of a test
+* Added flow.ids method to return what IDs have been assigned so far (Brian Caquelin)
+
 <a class="anchor release_tag" name="v1_0_0"></a>
 <h1><a href="#v1_0_0">Tag: v1.0.0</a></h1>
 
