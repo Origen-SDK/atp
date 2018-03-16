@@ -71,8 +71,6 @@ describe 'The flow builder API' do
             s(:test,
               s(:object, "test2")))))
 
-    tests = atp.raw.find_all(:test)
-    debugger
     tests = atp.raw.find_all(:test, recursive: true)
 
     tests[0].description.should == "I'm test 1"

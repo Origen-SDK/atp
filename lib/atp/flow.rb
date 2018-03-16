@@ -4,8 +4,6 @@ module ATP
   class Flow
     attr_reader :program, :name
 
-    attr_accessor :source_file, :source_line_number, :description
-
     CONDITION_KEYS = {
       if_enabled:        :if_enabled,
       if_enable:         :if_enabled,
@@ -64,10 +62,14 @@ module ATP
 
     def initialize(program, name = nil, options = {})
       name, options = nil, name if name.is_a?(Hash)
-      extract_meta!(options)
+      @source_file = []
+      @source_line_number = []
+      @description = []
       @program = program
       @name = name
-      @pipeline = [n1(:flow, n1(:name, name))]
+      extract_meta!(options) do
+        @pipeline = [n1(:flow, n1(:name, name))]
+      end
     end
 
     # @api private
@@ -213,14 +215,15 @@ module ATP
     #     flow.test ...
     #   end
     def group(name, options = {})
-      extract_meta!(options)
-      apply_conditions(options) do
-        children = [n1(:name, name)]
-        children << id(options[:id]) if options[:id]
-        children << on_fail(options[:on_fail]) if options[:on_fail]
-        children << on_pass(options[:on_pass]) if options[:on_pass]
-        g = n(:group, children)
-        append_to(g) { yield }
+      extract_meta!(options) do
+        apply_conditions(options) do
+          children = [n1(:name, name)]
+          children << id(options[:id]) if options[:id]
+          children << on_fail(options[:on_fail]) if options[:on_fail]
+          children << on_pass(options[:on_pass]) if options[:on_pass]
+          g = n(:group, children)
+          append_to(g) { yield }
+        end
       end
     end
 
@@ -234,130 +237,131 @@ module ATP
     # @option options [Hash] :on_pass What action to take if the test passes
     # @option options [Hash] :conditions What conditions must be met to execute the test
     def test(instance, options = {})
-      extract_meta!(options)
-      apply_conditions(options) do
-        # Allows any continue, bin, or soft bin argument passed in at the options top-level to be assumed
-        # to be the action to take if the test fails
-        if b = options.delete(:bin)
-          options[:on_fail] ||= {}
-          options[:on_fail][:bin] = b
-        end
-        if b = options.delete(:bin_description)
-          options[:on_fail] ||= {}
-          options[:on_fail][:bin_description] = b
-        end
-        if b = options.delete(:softbin) || b = options.delete(:sbin) || b = options.delete(:soft_bin)
-          options[:on_fail] ||= {}
-          options[:on_fail][:softbin] = b
-        end
-        if b = options.delete(:softbin_description) || options.delete(:sbin_description) || options.delete(:soft_bin_description)
-          options[:on_fail] ||= {}
-          options[:on_fail][:softbin_description] = b
-        end
-        if options.delete(:continue)
-          options[:on_fail] ||= {}
-          options[:on_fail][:continue] = true
-        end
-        if options.key?(:delayed)
-          options[:on_fail] ||= {}
-          options[:on_fail][:delayed] = options.delete(:delayed)
-        end
-        if f = options.delete(:flag_pass)
-          options[:on_pass] ||= {}
-          options[:on_pass][:set_flag] = f
-        end
-        if f = options.delete(:flag_fail)
-          options[:on_fail] ||= {}
-          options[:on_fail][:set_flag] = f
-        end
-
-        children = [n1(:object, instance)]
-
-        name = (options[:name] || options[:tname] || options[:test_name])
-        unless name
-          [:name, :tname, :test_name].each do |m|
-            name ||= instance.respond_to?(m) ? instance.send(m) : nil
+      extract_meta!(options) do
+        apply_conditions(options) do
+          # Allows any continue, bin, or soft bin argument passed in at the options top-level to be assumed
+          # to be the action to take if the test fails
+          if b = options.delete(:bin)
+            options[:on_fail] ||= {}
+            options[:on_fail][:bin] = b
           end
-        end
-        children << n1(:name, name) if name
-
-        num = (options[:number] || options[:num] || options[:tnum] || options[:test_number])
-        unless num
-          [:number, :num, :tnum, :test_number].each do |m|
-            num ||= instance.respond_to?(m) ? instance.send(m) : nil
+          if b = options.delete(:bin_description)
+            options[:on_fail] ||= {}
+            options[:on_fail][:bin_description] = b
           end
-        end
-        children << number(num) if num
-
-        children << id(options[:id]) if options[:id]
-
-        if levels = options[:level] || options[:levels]
-          levels = [levels] unless levels.is_a?(Array)
-          levels.each do |l|
-            children << level(l[:name], l[:value], l[:unit] || l[:units])
+          if b = options.delete(:softbin) || b = options.delete(:sbin) || b = options.delete(:soft_bin)
+            options[:on_fail] ||= {}
+            options[:on_fail][:softbin] = b
           end
-        end
+          if b = options.delete(:softbin_description) || options.delete(:sbin_description) || options.delete(:soft_bin_description)
+            options[:on_fail] ||= {}
+            options[:on_fail][:softbin_description] = b
+          end
+          if options.delete(:continue)
+            options[:on_fail] ||= {}
+            options[:on_fail][:continue] = true
+          end
+          if options.key?(:delayed)
+            options[:on_fail] ||= {}
+            options[:on_fail][:delayed] = options.delete(:delayed)
+          end
+          if f = options.delete(:flag_pass)
+            options[:on_pass] ||= {}
+            options[:on_pass][:set_flag] = f
+          end
+          if f = options.delete(:flag_fail)
+            options[:on_fail] ||= {}
+            options[:on_fail][:set_flag] = f
+          end
 
-        lims = options[:limit] || options[:limits]
-        if lims || options[:lo] || options[:low] || options[:hi] || options[:high]
-          if lims == :none || lims == 'none'
-            children << n0(:nolimits)
-          else
-            lims = Array(lims) unless lims.is_a?(Array)
-            if lo = options[:lo] || options[:low]
-              lims << { value: lo, rule: :gte }
+          children = [n1(:object, instance)]
+
+          name = (options[:name] || options[:tname] || options[:test_name])
+          unless name
+            [:name, :tname, :test_name].each do |m|
+              name ||= instance.respond_to?(m) ? instance.send(m) : nil
             end
-            if hi = options[:hi] || options[:high]
-              lims << { value: hi, rule: :lte }
+          end
+          children << n1(:name, name) if name
+
+          num = (options[:number] || options[:num] || options[:tnum] || options[:test_number])
+          unless num
+            [:number, :num, :tnum, :test_number].each do |m|
+              num ||= instance.respond_to?(m) ? instance.send(m) : nil
             end
-            lims.each do |l|
-              if l.is_a?(Hash)
-                children << n(:limit, [l[:value], l[:rule], l[:unit] || l[:units], l[:selector]])
+          end
+          children << number(num) if num
+
+          children << id(options[:id]) if options[:id]
+
+          if levels = options[:level] || options[:levels]
+            levels = [levels] unless levels.is_a?(Array)
+            levels.each do |l|
+              children << level(l[:name], l[:value], l[:unit] || l[:units])
+            end
+          end
+
+          lims = options[:limit] || options[:limits]
+          if lims || options[:lo] || options[:low] || options[:hi] || options[:high]
+            if lims == :none || lims == 'none'
+              children << n0(:nolimits)
+            else
+              lims = Array(lims) unless lims.is_a?(Array)
+              if lo = options[:lo] || options[:low]
+                lims << { value: lo, rule: :gte }
+              end
+              if hi = options[:hi] || options[:high]
+                lims << { value: hi, rule: :lte }
+              end
+              lims.each do |l|
+                if l.is_a?(Hash)
+                  children << n(:limit, [l[:value], l[:rule], l[:unit] || l[:units], l[:selector]])
+                end
               end
             end
           end
-        end
 
-        if pins = options[:pin] || options[:pins]
-          pins = [pins] unless pins.is_a?(Array)
-          pins.each do |p|
-            if p.is_a?(Hash)
-              children << pin(p[:name])
-            else
-              children << pin(p)
+          if pins = options[:pin] || options[:pins]
+            pins = [pins] unless pins.is_a?(Array)
+            pins.each do |p|
+              if p.is_a?(Hash)
+                children << pin(p[:name])
+              else
+                children << pin(p)
+              end
             end
           end
-        end
 
-        if pats = options[:pattern] || options[:patterns]
-          pats = [pats] unless pats.is_a?(Array)
-          pats.each do |p|
-            if p.is_a?(Hash)
-              children << pattern(p[:name], p[:path])
-            else
-              children << pattern(p)
+          if pats = options[:pattern] || options[:patterns]
+            pats = [pats] unless pats.is_a?(Array)
+            pats.each do |p|
+              if p.is_a?(Hash)
+                children << pattern(p[:name], p[:path])
+              else
+                children << pattern(p)
+              end
             end
           end
-        end
 
-        if options[:meta]
-          attrs = []
-          options[:meta].each { |k, v| attrs << attribute(k, v) }
-          children << n(:meta, attrs)
-        end
-
-        if subs = options[:sub_test] || options[:sub_tests]
-          subs = [subs] unless subs.is_a?(Array)
-          subs.each do |s|
-            children << s.updated(:sub_test, nil)
+          if options[:meta]
+            attrs = []
+            options[:meta].each { |k, v| attrs << attribute(k, v) }
+            children << n(:meta, attrs)
           end
+
+          if subs = options[:sub_test] || options[:sub_tests]
+            subs = [subs] unless subs.is_a?(Array)
+            subs.each do |s|
+              children << s.updated(:sub_test, nil)
+            end
+          end
+
+          children << on_fail(options[:on_fail]) if options[:on_fail]
+          children << on_pass(options[:on_pass]) if options[:on_pass]
+
+          save_conditions
+          n(:test, children)
         end
-
-        children << on_fail(options[:on_fail]) if options[:on_fail]
-        children << on_pass(options[:on_pass]) if options[:on_pass]
-
-        save_conditions
-        n(:test, children)
       end
     end
 
@@ -374,12 +378,13 @@ module ATP
         fail 'The bin number must be passed as the first argument'
       end
       options[:bin_description] ||= options.delete(:description)
-      extract_meta!(options)
-      apply_conditions(options) do
-        options[:type] ||= :fail
-        options[:bin] = number
-        options[:softbin] ||= options[:soft_bin] || options[:sbin]
-        set_result(options[:type], options)
+      extract_meta!(options) do
+        apply_conditions(options) do
+          options[:type] ||= :fail
+          options[:bin] = number
+          options[:softbin] ||= options[:soft_bin] || options[:sbin]
+          set_result(options[:type], options)
+        end
       end
     end
 
@@ -392,57 +397,64 @@ module ATP
     end
 
     def cz(instance, cz_setup, options = {})
-      extract_meta!(options)
-      apply_conditions(options) do
-        node = n1(:cz, cz_setup)
-        append_to(node) { test(instance, options) }
+      extract_meta!(options) do
+        apply_conditions(options) do
+          node = n1(:cz, cz_setup)
+          append_to(node) { test(instance, options) }
+        end
       end
     end
     alias_method :characterize, :cz
 
     # Append a log message line to the flow
     def log(message, options = {})
-      extract_meta!(options)
-      apply_conditions(options) do
-        n1(:log, message.to_s)
+      extract_meta!(options) do
+        apply_conditions(options) do
+          n1(:log, message.to_s)
+        end
       end
     end
 
     # Enable a flow control variable
     def enable(var, options = {})
-      extract_meta!(options)
-      apply_conditions(options) do
-        n1(:enable, var)
+      extract_meta!(options) do
+        apply_conditions(options) do
+          n1(:enable, var)
+        end
       end
     end
 
     # Disable a flow control variable
     def disable(var, options = {})
-      extract_meta!(options)
-      apply_conditions(options) do
-        n1(:disable, var)
+      extract_meta!(options) do
+        apply_conditions(options) do
+          n1(:disable, var)
+        end
       end
     end
 
     def set_flag(flag, options = {})
-      extract_meta!(options)
-      apply_conditions(options) do
-        set_flag_node(flag)
+      extract_meta!(options) do
+        apply_conditions(options) do
+          set_flag_node(flag)
+        end
       end
     end
 
     # Insert explicitly rendered content in to the flow
     def render(str, options = {})
-      extract_meta!(options)
-      apply_conditions(options) do
-        n1(:render, str)
+      extract_meta!(options) do
+        apply_conditions(options) do
+          n1(:render, str)
+        end
       end
     end
 
     def continue(options = {})
-      extract_meta!(options)
-      apply_conditions(options) do
-        n0(:continue)
+      extract_meta!(options) do
+        apply_conditions(options) do
+          n0(:continue)
+        end
       end
     end
 
@@ -489,37 +501,50 @@ module ATP
 
     private
 
+    def description
+      @description.last
+    end
+
+    def source_file
+      @source_file.last
+    end
+
+    def source_line_number
+      @source_line_number.last
+    end
+
     def flow_control_method(name, flag, options = {}, &block)
-      extract_meta!(options)
-      if flag.is_a?(Array)
-        if name == :if_passed
-          fail 'if_passed only accepts one ID, use if_any_passed or if_all_passed for multiple IDs'
-        end
-        if name == :if_failed
-          fail 'if_failed only accepts one ID, use if_any_failed or if_all_failed for multiple IDs'
-        end
-      end
-      apply_conditions(options) do
-        if block
-          node = n1(name, flag)
-          open_conditions << [name, flag]
-          node = append_to(node) { block.call }
-          open_conditions.pop
-        else
-          unless options[:then] || options[:else]
-            fail "You must supply a :then or :else option when calling #{name} like this!"
+      extract_meta!(options) do
+        if flag.is_a?(Array)
+          if name == :if_passed
+            fail 'if_passed only accepts one ID, use if_any_passed or if_all_passed for multiple IDs'
           end
-          node = n1(name, flag)
-          if options[:then]
-            node = append_to(node) { options[:then].call }
-          end
-          if options[:else]
-            e = n0(:else)
-            e = append_to(e) { options[:else].call }
-            node = node.updated(nil, node.children + [e])
+          if name == :if_failed
+            fail 'if_failed only accepts one ID, use if_any_failed or if_all_failed for multiple IDs'
           end
         end
-        node
+        apply_conditions(options) do
+          if block
+            node = n1(name, flag)
+            open_conditions << [name, flag]
+            node = append_to(node) { block.call }
+            open_conditions.pop
+          else
+            unless options[:then] || options[:else]
+              fail "You must supply a :then or :else option when calling #{name} like this!"
+            end
+            node = n1(name, flag)
+            if options[:then]
+              node = append_to(node) { options[:then].call }
+            end
+            if options[:else]
+              e = n0(:else)
+              e = append_to(e) { options[:else].call }
+              node = node.updated(nil, node.children + [e])
+            end
+          end
+          node
+        end
       end
     end
 
@@ -629,9 +654,13 @@ module ATP
     end
 
     def extract_meta!(options)
-      self.source_file = options.delete(:source_file)
-      self.source_line_number = options.delete(:source_line_number)
-      self.description = options.delete(:description)
+      @source_file << options.delete(:source_file)
+      @source_line_number << options.delete(:source_line_number)
+      @description << options.delete(:description)
+      yield
+      @source_file.pop
+      @source_line_number.pop
+      @description.pop
     end
 
     def id(name)
