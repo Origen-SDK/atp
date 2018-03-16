@@ -57,6 +57,28 @@ describe 'The flow builder API' do
               s(:bin, 1)))))
   end
 
+  it "test descriptions are applied correctly to embedded tests" do
+    test :test1, description: "I'm test 1", on_fail: -> do
+      test :test2, description: "I'm test 2"
+    end
+
+    atp.raw.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:test,
+          s(:object, "test1"),
+          s(:on_fail,
+            s(:test,
+              s(:object, "test2")))))
+
+    tests = atp.raw.find_all(:test)
+    debugger
+    tests = atp.raw.find_all(:test, recursive: true)
+
+    tests[0].description.should == "I'm test 1"
+    tests[1].description.should == "I'm test 2"
+  end
+
   it "conditions can be specified in-line" do
     test :test1, id: :t1
     test :test2, id: "T2" # Test that strings will be accepted for IDs

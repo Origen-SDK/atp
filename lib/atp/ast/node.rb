@@ -77,9 +77,19 @@ module ATP
         children.find { |c| types.include?(c.try(:type)) }
       end
 
-      # Returns an array containing all child nodes of the given type(s)
+      # Returns an array containing all child nodes of the given type(s), by default only considering
+      # the immediate children of the node on which this was called.
+      #
+      # To find all children of the given type by recursively searching through all child nodes, pass
+      # recursive: true when calling this method.
       def find_all(*types)
-        children.select { |c| types.include?(c.try(:type)) }
+        options = types.pop if types.last.is_a?(Hash)
+        options ||= {}
+        if options[:recursive]
+          Extractor.new.process(self, types)
+        else
+          children.select { |c| types.include?(c.try(:type)) }
+        end
       end
 
       # Returns an array containing all flags which are set within the given node
