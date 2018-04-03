@@ -373,6 +373,16 @@ module ATP
       temp.children.first.updated(:sub_test, nil)
     end
 
+    def sub_flow(flow_node, options = {})
+      children = flow_node.children
+      if options[:path]
+        children = [n1(:path, options[:path])] + children
+      end
+      apply_conditions(options) do
+        flow_node.updated(:sub_flow, children)
+      end
+    end
+
     def bin(number, options = {})
       if number.is_a?(Hash)
         fail 'The bin number must be passed as the first argument'
