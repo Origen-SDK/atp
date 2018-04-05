@@ -66,6 +66,7 @@ module ATP
     autoload :AdjacentIfCombiner, 'atp/processors/adjacent_if_combiner'
     autoload :ContinueImplementer, 'atp/processors/continue_implementer'
     autoload :ExtractSetFlags, 'atp/processors/extract_set_flags'
+    autoload :SubFlowRemover, 'atp/processors/sub_flow_remover'
   end
 
   # Summarizers extract summary data from the given AST

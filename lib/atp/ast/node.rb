@@ -124,6 +124,11 @@ module ATP
         Processors::ExtractSetFlags.new.run(self)
       end
 
+      # Returns a copy of node with any sub-flow nodes removed
+      def excluding_sub_flows
+        Processors::SubFlowRemover.new.run(self)
+      end
+
       # Returns true if the node contains any nodes of the given type(s) or if any
       # of its children do.
       # To consider only direct children of this node use: node.find_all(*types).empty?
