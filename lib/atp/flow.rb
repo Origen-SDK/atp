@@ -704,7 +704,7 @@ module ATP
       end
       children << n0(:continue) if on_pass_actions[:continue]
       children << n1(:render, on_pass_actions[:render]) if on_pass_actions[:render]
-      n(:on_fail, children.flatten)
+      n(:on_pass, children.flatten)
     end
 
     def pattern(name, path = nil)
