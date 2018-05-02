@@ -237,41 +237,38 @@ module ATP
     # @option options [Hash] :on_pass What action to take if the test passes
     # @option options [Hash] :conditions What conditions must be met to execute the test
     def test(instance, options = {})
+      options[:actions] = {}.tap do |bin_hash|
+        bin_hash[:on_fail] = {}
+        bin_hash[:on_pass] = {}
+      end
+      options[:on_fail] ||= {}
       extract_meta!(options) do
         apply_conditions(options) do
           # Allows any continue, bin, or soft bin argument passed in at the options top-level to be assumed
           # to be the action to take if the test fails
           if b = options.delete(:bin)
-            options[:on_fail] ||= {}
-            options[:on_fail][:bin] = b
+            options[:actions][:bin] = b
           end
           if b = options.delete(:bin_description)
-            options[:on_fail] ||= {}
-            options[:on_fail][:bin_description] = b
+            options[:actions][:bin_description] = b
           end
           if b = options.delete(:softbin) || b = options.delete(:sbin) || b = options.delete(:soft_bin)
-            options[:on_fail] ||= {}
-            options[:on_fail][:softbin] = b
+            options[:actions][:on_fail][:softbin] = b
           end
           if b = options.delete(:softbin_description) || options.delete(:sbin_description) || options.delete(:soft_bin_description)
-            options[:on_fail] ||= {}
-            options[:on_fail][:softbin_description] = b
+            options[:actions][:on_fail][:softbin_description] = b
           end
           if options.delete(:continue)
-            options[:on_fail] ||= {}
-            options[:on_fail][:continue] = true
+            options[:actions][:on_fail][:continue] = true
           end
           if options.key?(:delayed)
-            options[:on_fail] ||= {}
-            options[:on_fail][:delayed] = options.delete(:delayed)
+            options[:actions][:on_fail][:delayed] = options.delete(:delayed)
           end
           if f = options.delete(:flag_pass)
-            options[:on_pass] ||= {}
-            options[:on_pass][:set_flag] = f
+            options[:actions][:on_pass][:set_flag] = f
           end
           if f = options.delete(:flag_fail)
-            options[:on_fail] ||= {}
-            options[:on_fail][:set_flag] = f
+            options[:actions][:on_fail][:set_flag] = f
           end
 
           children = [n1(:object, instance)]
@@ -356,8 +353,8 @@ module ATP
             end
           end
 
-          children << on_fail(options[:on_fail]) if options[:on_fail]
-          children << on_pass(options[:on_pass]) if options[:on_pass]
+          children << on_fail(options) if options[:on_fail].is_a?(Proc) || !options[:actions][:on_fail].empty?
+          children << on_pass(options) if options[:on_pass].is_a?(Proc) || !options[:actions][:on_pass].empty?
 
           save_conditions
           n(:test, children)
@@ -668,46 +665,46 @@ module ATP
     end
 
     def on_fail(options = {})
-      if options.is_a?(Proc)
+      children = []
+      if options[:on_fail].is_a?(Proc)
         node = n0(:on_fail)
-        append_to(node) { options.call }
-      else
-        children = []
-        if options[:bin] || options[:softbin]
-          fail_opts = { bin: options[:bin], softbin: options[:softbin] }
-          fail_opts[:bin_description] = options[:bin_description] if options[:bin_description]
-          fail_opts[:softbin_description] = options[:softbin_description] if options[:softbin_description]
-          children << set_result(:fail, fail_opts)
-        end
-        if options[:set_run_flag] || options[:set_flag]
-          children << set_flag_node(options[:set_run_flag] || options[:set_flag])
-        end
-        children << n0(:continue) if options[:continue]
-        children << n1(:delayed, !!options[:delayed]) if options.key?(:delayed)
-        children << n1(:render, options[:render]) if options[:render]
-        n(:on_fail, children)
+        children << append_to(node) { options[:on_fail].call }.children.dup
       end
+      on_fail_actions = options[:actions][:on_fail]
+      if on_fail_actions[:bin] || on_fail_actions[:softbin]
+        fail_opts = { bin: on_fail_actions[:bin], softbin: on_fail_actions[:softbin] }
+        fail_opts[:bin_description] = on_fail_actions[:bin_description] if on_fail_actions[:bin_description]
+        fail_opts[:softbin_description] = on_fail_actions[:softbin_description] if on_fail_actions[:softbin_description]
+        children << set_result(:fail, fail_opts)
+      end
+      if on_fail_actions[:set_run_flag] || on_fail_actions[:set_flag]
+        children << set_flag_node(on_fail_actions[:set_run_flag] || on_fail_actions[:set_flag])
+      end
+      children << n0(:continue) if on_fail_actions[:continue]
+      children << n1(:delayed, !!on_fail_actions[:delayed]) if on_fail_actions.key?(:delayed)
+      children << n1(:render, on_fail_actions[:render]) if on_fail_actions[:render]
+      n(:on_fail, children)
     end
 
     def on_pass(options = {})
-      if options.is_a?(Proc)
+      children = []
+      on_pass_actions = options[:actions][:on_pass]
+      if options[:on_pass].is_a?(Proc)
         node = n0(:on_pass)
-        append_to(node) { options.call }
-      else
-        children = []
-        if options[:bin] || options[:softbin]
-          pass_opts = { bin: options[:bin], softbin: options[:softbin] }
-          pass_opts[:bin_description] = options[:bin_description] if options[:bin_description]
-          pass_opts[:softbin_description] = options[:softbin_description] if options[:softbin_description]
-          children << set_result(:pass, pass_opts)
-        end
-        if options[:set_run_flag] || options[:set_flag]
-          children << set_flag_node(options[:set_run_flag] || options[:set_flag])
-        end
-        children << n0(:continue) if options[:continue]
-        children << n1(:render, options[:render]) if options[:render]
-        n(:on_pass, children)
+        children << append_to(node) { options[:on_pass].call }.children.dup
       end
+      if on_pass_actions[:bin] || on_pass_actions[:softbin]
+        pass_opts = { bin: on_pass_actions[:bin], softbin: on_pass_actions[:softbin] }
+        pass_opts[:bin_description] = on_pass_actions[:bin_description] if on_pass_actions[:bin_description]
+        pass_opts[:softbin_description] = on_pass_actions[:softbin_description] if on_pass_actions[:softbin_description]
+        children << set_result(:pass, pass_opts)
+      end
+      if on_pass_actions[:set_run_flag] || on_pass_actions[:set_flag]
+        children << set_flag_node(on_pass_actions[:set_run_flag] || on_pass_actions[:set_flag])
+      end
+      children << n0(:continue) if on_pass_actions[:continue]
+      children << n1(:render, on_pass_actions[:render]) if on_pass_actions[:render]
+      n(:on_fail, children)
     end
 
     def pattern(name, path = nil)
