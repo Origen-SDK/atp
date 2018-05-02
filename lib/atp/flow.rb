@@ -683,7 +683,7 @@ module ATP
       children << n0(:continue) if on_fail_actions[:continue]
       children << n1(:delayed, !!on_fail_actions[:delayed]) if on_fail_actions.key?(:delayed)
       children << n1(:render, on_fail_actions[:render]) if on_fail_actions[:render]
-      n(:on_fail, children)
+      n(:on_fail, children.flatten)
     end
 
     def on_pass(options = {})
@@ -704,7 +704,7 @@ module ATP
       end
       children << n0(:continue) if on_pass_actions[:continue]
       children << n1(:render, on_pass_actions[:render]) if on_pass_actions[:render]
-      n(:on_fail, children)
+      n(:on_fail, children.flatten)
     end
 
     def pattern(name, path = nil)
