@@ -1,3 +1,14 @@
+<a class="anchor release_tag" name="v1_1_2"></a>
+<h1><a href="#v1_1_2">Tag: v1.1.2</a></h1>
+
+##### Branch: 'master'
+
+##### by info-rchitect on 04-May-2018 09:31AM
+
+
+* Fixed bug when on\_fail option specified a Proc and binning is added as well,
+  originally highlighted [here](https://github.com/Origen-SDK/test\_ids/issues/5) (Ginty)
+
 <a class="anchor release_tag" name="v1_1_1"></a>
 <h1><a href="#v1_1_1">Tag: v1.1.1</a></h1>
 
