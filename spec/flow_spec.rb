@@ -387,5 +387,24 @@ describe 'The flow builder API' do
             s(:hard, 10, "Bin10"),
             s(:soft, 100, "Soft Bin100")))
     end
+
+    it 'can handle a proc on_fail and a bin' do
+      self.atp = ATP::Program.new.flow(:sort1) 
+
+      test :blah, on_fail: -> {
+        test :blah2
+      }, bin: 10
+
+      atp.raw.should ==
+        s(:flow,
+          s(:name, "sort1"),
+          s(:test,
+            s(:object, "blah"),
+            s(:on_fail,
+              s(:test,
+                s(:object, "blah2")),
+              s(:set_result, "fail",
+                s(:bin, 10)))))
+    end
   end
 end
