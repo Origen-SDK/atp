@@ -241,6 +241,12 @@ module ATP
     def test(instance, options = {})
       extract_meta!(options) do
         apply_conditions(options) do
+          if options[:on_fail].is_a?(Proc)
+            before_on_fail = options.delete(:on_fail)
+          end
+          if options[:on_pass].is_a?(Proc)
+            before_on_pass = options.delete(:on_pass)
+          end
           # Allows any continue, bin, or soft bin argument passed in at the options top-level to be assumed
           # to be the action to take if the test fails
           if b = options.delete(:bin)
@@ -358,8 +364,25 @@ module ATP
             end
           end
 
-          children << on_fail(options[:on_fail]) if options[:on_fail]
-          children << on_pass(options[:on_pass]) if options[:on_pass]
+          if before_on_fail
+            on_fail_node = on_fail(before_on_fail)
+            if options[:on_fail]
+              on_fail_node = on_fail_node.updated(nil, on_fail_node.children + on_fail(options[:on_fail]).children)
+            end
+            children << on_fail_node
+          else
+            children << on_fail(options[:on_fail]) if options[:on_fail]
+          end
+
+          if before_on_pass
+            on_pass_node = on_pass(before_on_pass)
+            if options[:on_pass]
+              on_pass_node = on_pass_node.updated(nil, on_pass_node.children + on_pass(options[:on_pass]).children)
+            end
+            children << on_pass_node
+          else
+            children << on_pass(options[:on_pass]) if options[:on_pass]
+          end
 
           save_conditions
           n(:test, children)
