@@ -263,6 +263,10 @@ module ATP
             options[:on_fail] ||= {}
             options[:on_fail][:softbin_description] = b
           end
+          if options.delete(:not_over_on)
+            options[:on_fail] ||= {}
+            options[:on_fail][:not_over_on] = true
+          end
           if options.delete(:continue)
             options[:on_fail] ||= {}
             options[:on_fail][:continue] = true
@@ -700,6 +704,7 @@ module ATP
           fail_opts = { bin: options[:bin], softbin: options[:softbin] }
           fail_opts[:bin_description] = options[:bin_description] if options[:bin_description]
           fail_opts[:softbin_description] = options[:softbin_description] if options[:softbin_description]
+          fail_opts[:not_over_on] = options[:not_over_on] if options[:not_over_on]
           children << set_result(:fail, fail_opts)
         end
         if options[:set_run_flag] || options[:set_flag]
@@ -722,6 +727,7 @@ module ATP
           pass_opts = { bin: options[:bin], softbin: options[:softbin] }
           pass_opts[:bin_description] = options[:bin_description] if options[:bin_description]
           pass_opts[:softbin_description] = options[:softbin_description] if options[:softbin_description]
+          pass_opts[:not_over_on] = options[:not_over_on] if options[:not_over_on]
           children << set_result(:pass, pass_opts)
         end
         if options[:set_run_flag] || options[:set_flag]
@@ -769,6 +775,9 @@ module ATP
         children << n2(:softbin, options[:softbin], options[:softbin_description])
       else
         children << n1(:softbin, options[:softbin]) if options[:softbin]
+      end
+      if options[:not_over_on]
+        children << n1(:not_over_on, options[:not_over_on])
       end
       n(:set_result, children)
     end
