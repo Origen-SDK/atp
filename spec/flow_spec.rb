@@ -298,7 +298,7 @@ describe 'The flow builder API' do
 
     it "atp.test with not_over_on" do
       test("test1", bin: 1, softbin: 10)
-      test("test2", bin: 2, softbin: 20, not_over_on: true)
+      test("test2", bin: 2, softbin: 20, bin_attrs: { not_over_on: true })
    
       atp.raw.should ==
         s(:flow,
