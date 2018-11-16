@@ -13,6 +13,9 @@ describe 'Test nodes' do
 
   it "can capture limit information" do
     test :test1, limits: [{ value: 5, rule: :lte}, { value: 1, rule: :gt, units: :mV }]
+    test :test2, limits: :none
+    test :test3, high: 5
+    test :test4, low: 22
 
     ast.should ==
        s(:flow,
@@ -20,7 +23,16 @@ describe 'Test nodes' do
          s(:test,
            s(:object, "test1"),
            s(:limit, 5, "lte", nil, nil),
-           s(:limit, 1, "gt", "mV", nil)))
+           s(:limit, 1, "gt", "mV", nil)),
+         s(:test,
+           s(:object, "test2"),
+           s(:nolimits)),
+         s(:test,
+           s(:object, "test3"),
+           s(:limit, 5, "lte", nil, nil)),
+         s(:test,
+           s(:object, "test4"),
+           s(:limit, 22, "gte", nil, nil)))
   end
 
   it "can capture target pin information" do
