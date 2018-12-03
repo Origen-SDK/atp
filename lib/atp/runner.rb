@@ -49,6 +49,11 @@ module ATP
     end
     alias_method :on_unless_flag, :on_if_flag
 
+    def on_if_var(node)
+      # TODO: implement if var runner code
+    end
+    alias_method :on_unless_var, :on_if_var
+
     def on_if_enabled(node)
       if @options[:evaluate_enables]
         flag, *nodes = *node

@@ -55,10 +55,20 @@ module ATP
 
       unless_flag:       :unless_flag,
 
+      if_var:            :if_var,
+      if_vaiable:        :if_var,
+      if_vaiables:       :if_var,
+
+      unless_var:        :unless_var,
+      unless_variable:   :unless_var,
+      unless_variables:  :unless_var,
+
       group:             :group
     }
 
     CONDITION_NODE_TYPES = CONDITION_KEYS.values.uniq
+    
+    VARIABLE_CONDITION_KEYS = [:if_var, :if_vaiable, :if_vaiables, :unless_var, :unless_variable, :unless_variables]
 
     def initialize(program, name = nil, options = {})
       name, options = nil, name if name.is_a?(Hash)
@@ -141,6 +151,9 @@ module ATP
         end
         if options[:optimize_flags]
           ast = Processors::FlagOptimizer.new.run(ast, optimize_when_continue: options[:optimize_flags_when_continue])
+        end
+        if options[:optimize_variables]
+          ast = Processors::VariableOptimizer.new.run(ast, optimize_when_continue: options[:optimize_variables_when_continue])
         end
         ast = Processors::AdjacentIfCombiner.new.run(ast)
 
@@ -654,7 +667,7 @@ module ATP
           if conditions[key] && value
             fail "Multiple values assigned to flow condition #{key}" unless conditions[key] == value
           else
-            conditions[key] = value if value
+            conditions[key] = (value.is_a?(Hash) ? [value] : value) if value
           end
         end
       end
