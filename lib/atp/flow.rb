@@ -67,7 +67,7 @@ module ATP
     }
 
     CONDITION_NODE_TYPES = CONDITION_KEYS.values.uniq
-    
+
     VARIABLE_CONDITION_KEYS = [:if_var, :if_vaiable, :if_vaiables, :unless_var, :unless_variable, :unless_variables]
 
     def initialize(program, name = nil, options = {})
@@ -202,7 +202,7 @@ module ATP
     end
 
     # Indicate the that given flags should be considered volatile (can change at any time), which will
-    # prevent them from been touched by the optimization algorithms
+    # prevent them from being touched by the optimization algorithms
     def volatile(*flags)
       options = flags.pop if flags.last.is_a?(Hash)
       flags = flags.flatten
@@ -515,6 +515,7 @@ module ATP
     # been defined above
     CONDITION_KEYS.keys.each do |method|
       define_method method do |*flags, &block|
+        puts flags
         if flags.last.is_a?(Hash)
           options = flags.pop
         else

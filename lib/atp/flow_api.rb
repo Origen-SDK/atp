@@ -18,7 +18,7 @@ module ATP
             fail 'variable conditional only accepts Hash or Array of Hashes as first argument'
           end
           if args.first.is_a?(Hash)
-            single = args.shift #if args.first.is_a?(Hash)
+            single = args.shift
             single_ary = [single]
             args.insert(0, single_ary)
           else
