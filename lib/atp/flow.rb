@@ -515,7 +515,6 @@ module ATP
     # been defined above
     CONDITION_KEYS.keys.each do |method|
       define_method method do |*flags, &block|
-        puts flags
         if flags.last.is_a?(Hash)
           options = flags.pop
         else
