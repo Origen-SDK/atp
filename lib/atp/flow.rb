@@ -56,8 +56,8 @@ module ATP
       unless_flag:       :unless_flag,
 
       if_var:            :if_var,
-      if_vaiable:        :if_var,
-      if_vaiables:       :if_var,
+      if_variable:       :if_var,
+      if_variables:      :if_var,
 
       unless_var:        :unless_var,
       unless_variable:   :unless_var,
@@ -68,7 +68,7 @@ module ATP
 
     CONDITION_NODE_TYPES = CONDITION_KEYS.values.uniq
 
-    VARIABLE_CONDITION_KEYS = [:if_var, :if_vaiable, :if_vaiables, :unless_var, :unless_variable, :unless_variables]
+    VARIABLE_CONDITION_KEYS = [:if_var, :if_variable, :if_variables, :unless_var, :unless_variable, :unless_variables]
 
     def initialize(program, name = nil, options = {})
       name, options = nil, name if name.is_a?(Hash)

@@ -8,6 +8,7 @@ module ATP
       options = {
         evaluate_enables:    true,
         evaluate_flags:      true,
+        evaluate_variables:  true,
         evaluate_set_result: true
       }.merge(options)
       @options = options
@@ -50,7 +51,20 @@ module ATP
     alias_method :on_unless_flag, :on_if_flag
 
     def on_if_var(node)
-      # TODO: implement if var runner code
+      if @options[:evaluate_variables]
+        flag, *nodes = *node
+        flag = [flag].flatten
+        enabled = node.type == :if_var
+        active = flag.any? { |f| set_variables[f.keys[0].to_s] == f.values[0] }
+        if (enabled && active) || (!enabled && !active)
+          process_all(node)
+        end
+      else
+        c = open_container do
+          process_all(node.children)
+        end
+        container << node.updated(nil, node.children.take(1) + c)
+      end
     end
     alias_method :on_unless_var, :on_if_var
 
@@ -213,7 +227,19 @@ module ATP
     end
 
     def set_flags
-      @set_flags ||= []
+      @set_flags ||= [@options[:enable] || @options[:enables]].flatten.compact
+    end
+
+    def set_variables
+      @set_variables ||= begin
+        if @options[:variable]
+          Hash[*@options[:variable].flatten]
+        elsif @options[:variables]
+          Hash[*@options[:variables].flatten]
+        else
+          {}
+        end
+      end
     end
 
     # Returns an array of enabled flow flags
