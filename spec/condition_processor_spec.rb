@@ -644,4 +644,31 @@ describe 'The Condition Processor' do
         s(:test,
           s(:object, "test3")))
   end
+
+  it "variable conditions work" do
+    if_var({var1: 'VAL1'}) do 
+      test :test1
+    end
+    unless_var [{var2: 'VAL2'}] do 
+      test :test2
+    end
+    if_var [{var1: 'VAL3'},{var2: 'VAL4'}] do 
+      test :test3
+    end
+
+    atp.raw.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:if_var, [{:var1=>"VAL1"}],
+          s(:test,
+            s(:object, "test1"))),
+        s(:unless_var, [{:var2=>"VAL2"}],
+          s(:test,
+            s(:object, "test2"))),
+        s(:if_var, [{:var1=>"VAL3"}, {:var2=>"VAL4"}],
+          s(:test,
+            s(:object, "test3"))))
+
+
+  end
 end

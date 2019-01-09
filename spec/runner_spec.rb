@@ -181,4 +181,127 @@ test3
     END
 
   end
+
+  it "can handle variable conditions" do
+    if_var(var1: 'X') do
+      test :test1
+    end
+    test :test2, if_variable: {var2: 'Z'}
+    if_variables [{var3: 'T'}, {var4: 'F'}] do
+      test :test34
+    end
+    unless_var(var5: '22') do
+      test :test522
+    end
+
+    run.should == <<-END
+test522
+    END
+
+    run(variable: ["var1","X"]).should == <<-END
+test1
+test522
+    END
+
+    run(variables: ["var1","Y","var2","Z"]).should == <<-END
+test2
+test522
+    END
+
+    run(variables: ["var3","T"]).should == <<-END
+test34
+test522
+    END
+
+    run(variables: ["var4","F"]).should == <<-END
+test34
+test522
+    END
+
+    run(variables: ["var1","X","var2","Z","var3","T"]).should == <<-END
+test1
+test2
+test34
+test522
+    END
+
+    run(variables: ["var1","X","var2","Z","var5","22"]).should == <<-END
+test1
+test2
+    END
+  end
+
+  it "can handle in-flow enables and disables" do
+    test :test1
+    enable :retention
+    if_enabled :bitmap do
+      disable :retention
+      test :bitmap
+    end
+    if_enabled :retention do
+      test :retention
+    end
+
+    run.should == <<-END
+test1
+retention
+    END
+
+    run(enable: "bitmap").should == <<-END
+test1
+bitmap
+    END
+  end
+
+  it "can turn-off enables, flags and variables" do
+    test :test1
+    if_enabled :bitmap do
+      test :bitmap
+    end
+    if_flag :white do
+      test :giveup
+    end
+    if_var({var5: '22'}) do
+      test :test522
+    end
+
+    run.should == <<-END
+test1
+    END
+
+    run(enable: ["bitmap","white"], variable: ["var5","22"]).should == <<-END
+test1
+bitmap
+giveup
+test522
+    END
+
+    run(enable: "white", variable: ["var5","22"], evaluate_enables: false).should == <<-END
+test1
+bitmap
+giveup
+test522
+    END
+
+    run(variable: ["var5","22"], evaluate_flags: false).should == <<-END
+test1
+giveup
+test522
+    END
+
+    run(enable: "bitmap", evaluate_variables: false).should == <<-END
+test1
+bitmap
+test522
+    END
+
+    run(evaluate_enables: false, evaluate_flags: false, evaluate_variables: false).should == <<-END
+test1
+bitmap
+giveup
+test522
+    END
+
+  end
+
 end

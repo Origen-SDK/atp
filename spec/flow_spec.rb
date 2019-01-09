@@ -446,5 +446,21 @@ describe 'The flow builder API' do
               s(:set_result, "fail",
                 s(:bin, 10)))))
     end
+
+    it 'can handle source file and line number' do
+      test("test1", bin: 1, softbin: 10, continue: true, source_file: '/path/to/program/file', source_line_number: 22)
+      atp.ast.should ==
+        s(:flow,
+          s(:name, "sort1"),
+          s(:test,
+            s(:object, "test1"),
+            s(:on_fail,
+              s(:set_result, "fail",
+                s(:bin, 1),
+                s(:softbin, 10)),
+              s(:continue)),
+            s(:id, "t1")))
+
+    end
   end
 end
