@@ -399,9 +399,11 @@ module ATP
     end
 
     def sub_flow(flow_node, options = {})
-      children = flow_node.children
+      name, *children = *flow_node
       if options[:path]
-        children = [n1(:path, options[:path])] + children
+        children = [name] + [n1(:path, options[:path])] + children
+      else
+        children = [name] + children
       end
       apply_conditions(options) do
         flow_node.updated(:sub_flow, children)

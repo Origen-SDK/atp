@@ -48,6 +48,10 @@ module ATP
         node.updated(nil, optimize(process_all(node.children)))
       end
 
+      def on_sub_flow(node)
+        node.updated(nil, optimize(process_all(node.children)))
+      end
+
       def on_group(node)
         name, *nodes = *node
         if conditions_to_remove.any? { |c| node.type == c.type && c.to_a == [name] }

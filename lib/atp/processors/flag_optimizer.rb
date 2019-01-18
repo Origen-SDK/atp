@@ -73,6 +73,7 @@ module ATP
       alias_method :on_flow, :on_named_collection
       alias_method :on_group, :on_named_collection
       alias_method :on_unless_flag, :on_named_collection
+      alias_method :on_sub_flow, :on_named_collection
 
       def on_unnamed_collection(node)
         node.updated(nil, optimize(process_all(node.children)))
