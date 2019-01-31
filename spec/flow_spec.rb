@@ -296,6 +296,46 @@ describe 'The flow builder API' do
       end
     end
 
+    it "atp.test with not_over_on" do
+      test("test1", bin: 1, softbin: 10)
+      test("test2", bin: 2, softbin: 20, bin_attrs: { not_over_on: true })
+   
+      atp.raw.should ==
+        s(:flow,
+          s(:name, "sort1"),
+          s(:test,
+            s(:object, "test1"),
+            s(:on_fail,
+              s(:set_result, "fail",
+                s(:bin, 1),
+                s(:softbin, 10)))),
+          s(:test,
+            s(:object, "test2"),
+            s(:on_fail,
+              s(:set_result, "fail",
+                s(:bin, 2),
+                s(:softbin, 20),
+                s(:not_over_on, true)))))
+      
+      atp.raw.find_all(:test).each do |test_node|
+        set_result_node = test_node.find(:on_fail).find(:set_result)
+        case test_node.find(:object).try(:value)
+          when 'test1'
+            set_result_node.find(:bin).try(:value).should == 1
+            set_result_node.find(:bin).to_a[1].should == nil
+            set_result_node.find(:softbin).try(:value).should == 10
+            set_result_node.find(:softbin).to_a[1].should == nil
+            set_result_node.find(:not_over_on).try(:value) == nil
+          when 'test2'
+            set_result_node.find(:bin).try(:value).should == 2
+            set_result_node.find(:bin).to_a[1].should == nil
+            set_result_node.find(:softbin).try(:value).should == 20
+            set_result_node.find(:softbin).to_a[1].should == nil
+            set_result_node.find(:not_over_on).try(:value) == true
+        end
+      end
+    end
+
     it "atp.cz with enable words" do
       if_enable :cz do
         cz :test1, :cz1

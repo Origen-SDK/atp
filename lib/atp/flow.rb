@@ -257,6 +257,10 @@ module ATP
             options[:on_fail] ||= {}
             options[:on_fail][:bin_description] = b
           end
+          if b = options.delete(:bin_attrs)
+            options[:on_fail] ||= {}
+            options[:on_fail][:bin_attrs] = b
+          end
           if b = options.delete(:softbin) || b = options.delete(:sbin) || b = options.delete(:soft_bin)
             options[:on_fail] ||= {}
             options[:on_fail][:softbin] = b
@@ -714,6 +718,7 @@ module ATP
           fail_opts = { bin: options[:bin], softbin: options[:softbin] }
           fail_opts[:bin_description] = options[:bin_description] if options[:bin_description]
           fail_opts[:softbin_description] = options[:softbin_description] if options[:softbin_description]
+          fail_opts[:bin_attrs] = options[:bin_attrs] if options[:bin_attrs]
           children << set_result(:fail, fail_opts)
         end
         if options[:set_run_flag] || options[:set_flag]
@@ -736,6 +741,7 @@ module ATP
           pass_opts = { bin: options[:bin], softbin: options[:softbin] }
           pass_opts[:bin_description] = options[:bin_description] if options[:bin_description]
           pass_opts[:softbin_description] = options[:softbin_description] if options[:softbin_description]
+          pass_opts[:bin_attrs] = options[:bin_attrs] if options[:bin_attrs]
           children << set_result(:pass, pass_opts)
         end
         if options[:set_run_flag] || options[:set_flag]
@@ -783,6 +789,11 @@ module ATP
         children << n2(:softbin, options[:softbin], options[:softbin_description])
       else
         children << n1(:softbin, options[:softbin]) if options[:softbin]
+      end
+      if options[:bin_attrs]
+        options[:bin_attrs].each do |key, val|
+          children << n1(key, val)
+        end
       end
       n(:set_result, children)
     end
