@@ -37,6 +37,7 @@ module ATP
         @group_ids.pop
         group
       end
+      alias_method :on_sub_flow, :on_group
 
       def on_test(node)
         # Remove IDs nodes from test nodes if they refer to the ID of a parent group

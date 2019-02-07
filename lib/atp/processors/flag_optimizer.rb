@@ -134,7 +134,7 @@ module ATP
       end
 
       def can_be_combined?(node1, node2)
-        if node1.type == :test && (node2.type == :if_flag || node2.type == :unless_flag) &&
+        if (node1.type == :test || node1.type == :sub_flow) && (node2.type == :if_flag || node2.type == :unless_flag) &&
            # Don't optimize tests which are marked as continue if told not to
            !(node1.find(:on_fail) && node1.find(:on_fail).find(:continue) && !optimize_when_continue)
 

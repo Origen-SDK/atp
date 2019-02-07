@@ -94,8 +94,15 @@ module ATP
         updated(nil, children + nodes)
       end
 
-      # Remove the given nodes from the children
+      # Remove the given nodes (or types) from the children
       def remove(*nodes)
+        nodes = nodes.map do |node|
+          if node.is_a?(Symbol)
+            find_all(node)
+          else
+            node
+          end
+        end.flatten.compact
         updated(nil, children - nodes)
       end
 
