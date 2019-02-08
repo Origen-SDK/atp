@@ -44,6 +44,15 @@ def to_ast(str)
   ATP::AST::Node.from_sexp(str)
 end
 
+def add_meta!(options)
+  called_from = caller.find { |l| l =~ /_spec.rb:.*/ }
+  if called_from
+    called_from = called_from.split(':')
+    options[:source_file] = called_from[0]
+    options[:source_line_number] = called_from[1].to_i
+  end
+end
+
 RSpec.configure do |config|
   config.formatter = OrigenFormatter
   # rspec-expectations config goes here. You can use an alternate
