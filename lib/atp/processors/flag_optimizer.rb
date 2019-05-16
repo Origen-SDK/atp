@@ -79,6 +79,11 @@ module ATP
       end
       alias_method :on_else, :on_unnamed_collection
 
+      def on_if_true(node)
+        name, *nodes = *node
+        node.updated(nil, [name] + optimize(process_all(nodes)))
+      end
+
       def on_if_flag(node)
         name, *nodes = *node
         # Remove this node and return its children if required

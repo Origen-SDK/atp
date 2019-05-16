@@ -10,7 +10,7 @@ module ATP
 
     ([:test, :bin, :pass, :continue, :cz, :log, :sub_test, :volatile, :set_flag, :enable, :disable, :render,
       :context_changed?, :ids, :describe_bin, :describe_softbin, :describe_soft_bin] +
-      ATP::Flow::CONDITION_KEYS.keys).each do |method|
+      ATP::Flow::CONDITION_KEYS.keys + ATP::Flow::RELATIONAL_OPERATORS + [:expr]).each do |method|
       define_method method do |*args, &block|
         options = args.pop if args.last.is_a?(Hash)
         options ||= {}

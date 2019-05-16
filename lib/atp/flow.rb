@@ -55,10 +55,15 @@ module ATP
 
       unless_flag:       :unless_flag,
 
+      if_true:           :if_true,
+      if_false:          :if_true,
+
       group:             :group
     }
 
     CONDITION_NODE_TYPES = CONDITION_KEYS.values.uniq
+
+    RELATIONAL_OPERATORS = [:eq, :ne, :lt, :le, :gt, :ge]
 
     def initialize(program, name = nil, options = {})
       name, options = nil, name if name.is_a?(Hash)
@@ -496,6 +501,50 @@ module ATP
     def context_changed?(options)
       options[:_dont_delete_conditions_] = true
       last_conditions != clean_conditions(open_conditions + [extract_conditions(options)])
+    end
+
+    def if_true(*expressions, &block)
+      if expressions.last.is_a?(Hash)
+        options = expressions.pop
+      else
+        options = {}
+      end
+      flow_control_method(:if_true, expressions, options, &block)
+    end
+
+    def if_false(*expressions, &block)
+      if expressions.last.is_a?(Hash)
+        options = expressions.pop
+      else
+        options = {}
+      end
+      flow_control_method(:if_false, expressions, options, &block)
+    end
+
+    def expr(*args, &block)
+      options = args.pop if args.last.is_a?(Hash)
+      if args[0] == :or || args[0] == :and
+        operator = args.delete_at(0)
+        n(operator, args)
+      else
+        unless RELATIONAL_OPERATORS.include? args[1]
+          fail "Legal relational operators for expr are: #{RELATIONAL_OPERATORS}"
+        end
+        unless args.size == 3
+          fail "Format for expr must match (var1, relational operator, var2)"
+        end
+        n2(args[1], args[0], args[2])
+      end
+    end
+
+    RELATIONAL_OPERATORS.each do |method|
+      define_method method do |*args, &block|
+        options = args.pop if args.last.is_a?(Hash)
+        unless args.size == 2
+          fail "Format for relational operation must match: ':<opertor>(var1, var2)'"
+        end
+        n2(method.to_sym, args[0], args[1])
+      end unless method_defined?(method)
     end
 
     # Define handlers for all of the flow control block methods, unless a custom one has already
