@@ -531,7 +531,7 @@ module ATP
           fail "Legal relational operators for expr are: #{RELATIONAL_OPERATORS}"
         end
         unless args.size == 3
-          fail "Format for expr must match (var1, relational operator, var2)"
+          fail 'Format for expr must match (var1, relational operator, var2)'
         end
         n2(args[1], args[0], args[2])
       end
