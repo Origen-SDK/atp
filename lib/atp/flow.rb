@@ -55,8 +55,9 @@ module ATP
 
       unless_flag:       :unless_flag,
 
-      if_true:           :if_true,
-      if_false:          :if_true,
+      whenever:          :whenever,
+      whenever_all:      :whenever_all,
+      whenever_any:      :whenever_any,
 
       group:             :group
     }
@@ -503,38 +504,13 @@ module ATP
       last_conditions != clean_conditions(open_conditions + [extract_conditions(options)])
     end
 
-    def if_true(*expressions, &block)
+    def whenever(*expressions, &block)
       if expressions.last.is_a?(Hash)
         options = expressions.pop
       else
         options = {}
       end
-      flow_control_method(:if_true, expressions, options, &block)
-    end
-
-    def if_false(*expressions, &block)
-      if expressions.last.is_a?(Hash)
-        options = expressions.pop
-      else
-        options = {}
-      end
-      flow_control_method(:if_false, expressions, options, &block)
-    end
-
-    def expr(*args, &block)
-      options = args.pop if args.last.is_a?(Hash)
-      if args[0] == :or || args[0] == :and
-        operator = args.delete_at(0)
-        n(operator, args)
-      else
-        unless RELATIONAL_OPERATORS.include? args[0]
-          fail "Legal relational operators for expr are: #{RELATIONAL_OPERATORS}"
-        end
-        unless args.size == 3
-          fail 'Format for expr must match (var1, relational operator, var2)'
-        end
-        n2(args[0], args[1], args[2])
-      end
+      flow_control_method(:whenever, expressions, options, &block)
     end
 
     RELATIONAL_OPERATORS.each do |method|

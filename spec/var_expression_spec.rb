@@ -7,70 +7,49 @@ describe 'Variable Expressions' do
     self.atp = ATP::Program.new.flow(:sort1) 
   end
 
-  it "can create if_true node" do
-    if_true eq('ONE', 1) do
-      test :test1
+  it "can create whenever node(s)" do
+    whenever eq('ONE', 1) do
+      test :test_1eq1
+    end
+    whenever le('TWO', 3) do
+      test :test_2le3
     end
 
     atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
-        s(:if_true, [s(:eq, "ONE", 1)],
+        s(:whenever, [s(:eq, "ONE", 1)],
           s(:test,
-            s(:object, "test1"))))
-
+            s(:object, "test_1eq1"))),
+        s(:whenever, [s(:le, "TWO", 3)],
+          s(:test,
+            s(:object, "test_2le3"))))
   end
 
-  it "can create if_false node" do
-    if_false eq('ONE', 2) do
-      test :test1
+  it "can create whenever_all node" do
+    whenever_all gt('FOUR', 2), ne('FIVE', 6) do
+      test :test_4gt2and5ne6
     end
 
     atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
-        s(:if_false, [s(:eq, "ONE", 2)],
+        s(:whenever_all, [s(:gt, "FOUR", 2), s(:ne, "FIVE", 6)],
           s(:test,
-            s(:object, "test1"))))
-
+            s(:object, "test_4gt2and5ne6"))))
   end
 
-  it "can translate expr into relational operator node" do
-    if_true expr(:eq, 'THREE', 3) do
-      test :test3
-    end
-    if_true expr(:lt, 'FOUR', 5) do
-      test :test4lt5
-    end
-
-
-    atp.raw.should ==
-      s(:flow,
-        s(:name, "sort1"),
-        s(:if_true, [s(:eq, "THREE", 3)],
-          s(:test,
-            s(:object, "test3"))),
-        s(:if_true, [s(:lt, "FOUR", 5)],
-          s(:test,
-            s(:object, "test4lt5"))))
-
-
-  end
-
-  it "can create if_true node with multiple relationals" do
-    if_true expr(:and, eq('ONE', 1), eq('TWO', 2)) do
-      test :test1and2
+  it "can create whenever_any node" do
+    whenever_any ge('SEVEN', 0), lt('EIGHT', 9) do
+      test :test_7ge0or8lt9
     end
 
     atp.raw.should ==
       s(:flow,
         s(:name, "sort1"),
-        s(:if_true, [s(:and,
-        s(:eq, "ONE", 1),
-        s(:eq, "TWO", 2))],
+        s(:whenever_any, [s(:ge, "SEVEN", 0), s(:lt, "EIGHT", 9)],
           s(:test,
-            s(:object, "test1and2"))))
-
+            s(:object, "test_7ge0or8lt9"))))
   end
 end
 
