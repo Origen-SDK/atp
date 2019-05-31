@@ -527,13 +527,13 @@ module ATP
         operator = args.delete_at(0)
         n(operator, args)
       else
-        unless RELATIONAL_OPERATORS.include? args[1]
+        unless RELATIONAL_OPERATORS.include? args[0]
           fail "Legal relational operators for expr are: #{RELATIONAL_OPERATORS}"
         end
         unless args.size == 3
           fail 'Format for expr must match (var1, relational operator, var2)'
         end
-        n2(args[1], args[0], args[2])
+        n2(args[0], args[1], args[2])
       end
     end
 
