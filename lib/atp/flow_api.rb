@@ -8,8 +8,8 @@ module ATP
       @atp
     end
 
-    ([:test, :bin, :pass, :continue, :cz, :log, :sub_test, :volatile, :set_flag, :enable, :disable, :render,
-      :context_changed?, :ids, :describe_bin, :describe_softbin, :describe_soft_bin] +
+    ([:test, :bin, :pass, :continue, :cz, :log, :sub_test, :volatile, :set_flag, :set, :enable, :disable, :render,
+      :context_changed?, :ids, :describe_bin, :describe_softbin, :describe_soft_bin, :loop] +
       ATP::Flow::CONDITION_KEYS.keys + ATP::Flow::RELATIONAL_OPERATORS).each do |method|
       define_method method do |*args, &block|
         options = args.pop if args.last.is_a?(Hash)

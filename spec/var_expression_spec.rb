@@ -51,5 +51,21 @@ describe 'Variable Expressions' do
           s(:test,
             s(:object, "test_7ge0or8lt9"))))
   end
+
+  it "can create set node" do
+    set 'ONE', 0
+
+    whenever eq('ONE', 1) do
+      test :test_1eq1
+    end
+
+    atp.raw.should ==
+      s(:flow,
+        s(:name, "sort1"),
+        s(:set, "ONE", 0),
+        s(:whenever, [s(:eq, "ONE", 1)],
+          s(:test,
+            s(:object, "test_1eq1"))))
+  end
 end
 

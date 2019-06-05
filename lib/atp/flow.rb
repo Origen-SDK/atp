@@ -474,6 +474,14 @@ module ATP
       end
     end
 
+    def set(var, val, options = {})
+      extract_meta!(options) do
+        apply_conditions(options) do
+          set_node(var, val)
+        end
+      end
+    end
+
     # Insert explicitly rendered content in to the flow
     def render(str, options = {})
       extract_meta!(options) do
@@ -511,6 +519,24 @@ module ATP
         options = {}
       end
       flow_control_method(:whenever, expressions, options, &block)
+    end
+
+    def loop(*args, &block)
+      unless args[0].keys.include?(:from) && args[0].keys.include?(:to) && args[0].keys.include?(:step)
+        fail 'Loop must specify :from, :to, :step'
+      end
+      extract_meta!(options) do
+        apply_conditions(options) do
+          params = []
+          params << args[0][:from]
+          params << args[0][:to]
+          params << args[0][:step]
+          params << args[0][:var] if args[0].keys.include?(:var)
+          node = n(:loop, params)
+          node = append_to(node) { block.call }
+          node
+        end
+      end
     end
 
     RELATIONAL_OPERATORS.each do |method|
@@ -815,6 +841,10 @@ module ATP
 
     def set_flag_node(flag)
       n1(:set_flag, flag)
+    end
+
+    def set_node(var, val)
+      n2(:set, var, val)
     end
 
     # Ensures the flow ast has a volatile node, then adds the
