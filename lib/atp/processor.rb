@@ -34,7 +34,7 @@ module ATP
         if n.respond_to?(:type) && n.type == :inline
           results += n.children
         else
-          results << n
+          results << n unless n.respond_to?(:type) && n.type == :remove
         end
       end
       results

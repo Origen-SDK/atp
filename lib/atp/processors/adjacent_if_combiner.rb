@@ -46,10 +46,12 @@ module ATP
         node.updated(nil, [name] + optimize(process_all(nodes)))
       end
 
-      def on_group(node)
+      def on_named_collection(node)
         name, *nodes = *node
         node.updated(nil, [name] + optimize(process_all(nodes)))
       end
+      alias_method :on_group, :on_named_collection
+      alias_method :on_sub_flow, :on_named_collection
 
       def on_unnamed_collection(node)
         node.updated(nil, optimize(process_all(node.children)))

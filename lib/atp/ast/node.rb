@@ -2,14 +2,41 @@ require 'ast'
 module ATP
   module AST
     class Node < ::AST::Node
-      attr_reader :file, :line_number, :description
+      attr_reader :file, :line_number, :description, :properties
       attr_accessor :id
 
       def initialize(type, children = [], properties = {})
+        @properties = properties
         # Always use strings instead of symbols in the AST, makes serializing
         # back and forward to a string easier
         children = children.map { |c| c.is_a?(Symbol) ? c.to_s : c }
         super type, children, properties
+      end
+
+      def _dump(depth)
+        # this strips the @strip information from the instance
+        # d = { type: type, children: children, properties: properties }
+        d = { klass:       self.class,
+              id:          id,
+              file:        file,
+              line_number: line_number,
+              description: description,
+              type:        type,
+              children:    Processors::Marshal.new.process_all(children),
+              properties:  properties
+            }
+        Marshal.dump(d, depth)
+      end
+
+      def self._load(str)
+        d = Marshal.load(str)
+        p = d[:properties]
+        p[:id] = d[:id]
+        p[:file] = d[:file]
+        p[:line_number] = d[:line_number]
+        p[:description] = d[:description]
+        n = d[:klass].new(d[:type], d[:children], p)
+        n
       end
 
       def source
@@ -67,8 +94,15 @@ module ATP
         updated(nil, children + nodes)
       end
 
-      # Remove the given nodes from the children
+      # Remove the given nodes (or types) from the children
       def remove(*nodes)
+        nodes = nodes.map do |node|
+          if node.is_a?(Symbol)
+            find_all(node)
+          else
+            node
+          end
+        end.flatten.compact
         updated(nil, children - nodes)
       end
 
@@ -95,6 +129,11 @@ module ATP
       # Returns an array containing all flags which are set within the given node
       def set_flags
         Processors::ExtractSetFlags.new.run(self)
+      end
+
+      # Returns a copy of node with any sub-flow nodes removed
+      def excluding_sub_flows
+        Processors::SubFlowRemover.new.run(self)
       end
 
       # Returns true if the node contains any nodes of the given type(s) or if any

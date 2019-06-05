@@ -114,7 +114,8 @@ module ATP
         # turn off certain processors during test cases
         add_ids:                      true,
         optimize_flags:               true,
-        one_flag_per_test:            true
+        one_flag_per_test:            true,
+        include_sub_flows:            true
       }.merge(options)
       ###############################################################################
       ## Common pre-processing and validation
@@ -127,6 +128,7 @@ module ATP
       # Ensure everything has an ID, this helps later if condition nodes need to be generated
       ast = Processors::AddIDs.new.run(ast) if options[:add_ids]
       ast = Processors::FlowID.new.run(ast, options[:unique_id]) if options[:unique_id]
+      ast = Processors::SubFlowRemover.new.run(ast) unless options[:include_sub_flows]
 
       ###############################################################################
       ## Optimization for a C-like flow target, e.g. V93K
@@ -398,6 +400,18 @@ module ATP
     def sub_test(instance, options = {})
       temp = append_to(n0(:temp)) { test(instance, options) }
       temp.children.first.updated(:sub_test, nil)
+    end
+
+    def sub_flow(flow_node, options = {})
+      name, *children = *flow_node
+      if options[:path]
+        children = [name] + [n1(:path, options[:path])] + children
+      else
+        children = [name] + children
+      end
+      apply_conditions(options) do
+        flow_node.updated(:sub_flow, children)
+      end
     end
 
     def bin(number, options = {})

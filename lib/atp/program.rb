@@ -15,7 +15,12 @@ module ATP
     end
 
     def flows
-      @flows ||= {}
+      @flows ||= {}.with_indifferent_access
+      # To rescue previously created programs which have been loaded
+      unless @flows.is_a?(ActiveSupport::HashWithIndifferentAccess)
+        @flows = @flows.with_indifferent_access
+      end
+      @flows
     end
 
     # Save the program to a file

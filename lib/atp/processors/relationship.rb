@@ -98,17 +98,16 @@ module ATP
       def add_ran_flags(id, node)
         set_flag = node.updated(:set_flag, ["#{id}_RAN", :auto_generated])
         # For a group, set a flag immediately upon entry to the group to signal that
-        # it ran to later tests
-        if node.type == :group
-          name, id, *nodes = *node
-          if id.type == :id
-            nodes.unshift(set_flag)
-            nodes.unshift(id)
-          else
-            nodes.unshift(id)
-            nodes.unshift(set_flag)
+        # it ran to later tests, this is better than doing it immediately after the group
+        # in case it was bypassed
+        if node.type == :group || node.type == :sub_flow
+          nodes = node.to_a.dup
+          pre_nodes = []
+          while [:name, :id, :path].include?(nodes.first.try(:type))
+            pre_nodes << nodes.shift
           end
-          node.updated(nil, [name] + nodes)
+          node.updated(nil, pre_nodes + [set_flag] + nodes)
+
         # For a test, set a flag immediately after the referenced test has executed
         # but don't change its pass/fail handling
         elsif node.type == :test
@@ -132,6 +131,7 @@ module ATP
         node
       end
       alias_method :on_group, :on_test
+      alias_method :on_sub_flow, :on_test
 
       def on_if_failed(node)
         id, *children = *node
