@@ -39,7 +39,7 @@ module ATP
          :unless_failed, :passed, :if_ran, :if_executed, :unless_ran, :unless_executed, :job,
          :jobs, :if_job, :if_jobs, :unless_job, :unless_jobs, :if_any_failed, :unless_all_passed,
          :if_all_failed, :unless_any_passed, :if_any_passed, :unless_all_failed, :if_all_passed,
-         :unless_any_failed, :if_flag, :unless_flag]
+         :unless_any_failed, :if_flag, :unless_flag, :whenever, :whenever_all, :whenever_any]
       end
     end
   end

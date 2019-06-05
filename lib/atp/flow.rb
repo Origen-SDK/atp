@@ -55,10 +55,16 @@ module ATP
 
       unless_flag:       :unless_flag,
 
+      whenever:          :whenever,
+      whenever_all:      :whenever_all,
+      whenever_any:      :whenever_any,
+
       group:             :group
     }
 
     CONDITION_NODE_TYPES = CONDITION_KEYS.values.uniq
+
+    RELATIONAL_OPERATORS = [:eq, :ne, :lt, :le, :gt, :ge]
 
     def initialize(program, name = nil, options = {})
       name, options = nil, name if name.is_a?(Hash)
@@ -482,6 +488,14 @@ module ATP
       end
     end
 
+    def set(var, val, options = {})
+      extract_meta!(options) do
+        apply_conditions(options) do
+          n2(:set, var, val)
+        end
+      end
+    end
+
     # Insert explicitly rendered content in to the flow
     def render(str, options = {})
       extract_meta!(options) do
@@ -510,6 +524,42 @@ module ATP
     def context_changed?(options)
       options[:_dont_delete_conditions_] = true
       last_conditions != clean_conditions(open_conditions + [extract_conditions(options)])
+    end
+
+    def whenever(*expressions, &block)
+      if expressions.last.is_a?(Hash)
+        options = expressions.pop
+      else
+        options = {}
+      end
+      flow_control_method(:whenever, expressions, options, &block)
+    end
+
+    def loop(*args, &block)
+      unless args[0].keys.include?(:from) && args[0].keys.include?(:to) && args[0].keys.include?(:step)
+        fail 'Loop must specify :from, :to, :step'
+      end
+      extract_meta!(options) do
+        apply_conditions(options) do
+          # always pass 4-element array to loop node to simplify downstream parser
+          #   last element, 'var', will be nil if not specified by loop call
+          params = [args[0][:from], args[0][:to], args[0][:step], args[0][:var]]
+
+          node = n(:loop, params)
+          node = append_to(node) { block.call }
+          node
+        end
+      end
+    end
+
+    RELATIONAL_OPERATORS.each do |method|
+      define_method method do |*args, &block|
+        options = args.pop if args.last.is_a?(Hash)
+        unless args.size == 2
+          fail "Format for relational operation must match: ':<opertor>(var1, var2)'"
+        end
+        n2(method.to_sym, args[0], args[1])
+      end unless method_defined?(method)
     end
 
     # Define handlers for all of the flow control block methods, unless a custom one has already

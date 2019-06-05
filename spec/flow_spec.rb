@@ -446,5 +446,31 @@ describe 'The flow builder API' do
               s(:set_result, "fail",
                 s(:bin, 10)))))
     end
+
+    it 'can enable and disable flow control variables' do
+      self.atp = ATP::Program.new.flow(:sort1) 
+
+      enable :run_flag_1
+      if_enabled :run_flag_1 do
+        test :test_should_run
+      end
+
+      disable :run_flag_2
+      if_enabled :run_flag_2 do
+        test :test_should_not_run
+      end
+
+      atp.raw.should ==
+        s(:flow,
+          s(:name, "sort1"),
+          s(:enable, "run_flag_1"),
+          s(:if_enabled, "run_flag_1",
+            s(:test,
+              s(:object, "test_should_run"))),
+          s(:disable, "run_flag_2"),
+          s(:if_enabled, "run_flag_2",
+            s(:test,
+              s(:object, "test_should_not_run"))))
+    end
   end
 end
