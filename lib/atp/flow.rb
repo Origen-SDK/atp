@@ -477,7 +477,7 @@ module ATP
     def set(var, val, options = {})
       extract_meta!(options) do
         apply_conditions(options) do
-          set_node(var, val)
+          n2(:set, var, val)
         end
       end
     end
@@ -527,11 +527,10 @@ module ATP
       end
       extract_meta!(options) do
         apply_conditions(options) do
-          params = []
-          params << args[0][:from]
-          params << args[0][:to]
-          params << args[0][:step]
-          params << args[0][:var] if args[0].keys.include?(:var)
+          # always pass 4-element array to loop node to simplify downstream parser
+          #   last element, 'var', will be nil if not specified by loop call
+          params = [args[0][:from], args[0][:to], args[0][:step], args[0][:var]]
+
           node = n(:loop, params)
           node = append_to(node) { block.call }
           node
@@ -841,10 +840,6 @@ module ATP
 
     def set_flag_node(flag)
       n1(:set_flag, flag)
-    end
-
-    def set_node(var, val)
-      n2(:set, var, val)
     end
 
     # Ensures the flow ast has a volatile node, then adds the

@@ -18,7 +18,7 @@ describe 'Loop Support' do
         s(:name, "sort1"),
         s(:test,
           s(:object, "test_pre_loop")),
-        s(:loop, 0.3, 0.4, 0.1,
+        s(:loop, 0.3, 0.4, 0.1, nil,
           s(:test,
             s(:object, "test_loop1"))),
         s(:test,
